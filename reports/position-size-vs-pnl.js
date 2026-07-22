@@ -7,7 +7,7 @@ export default async function positionSizeVsPnl(events) {
     }
   }
   const sizeKeys = Object.keys(sizes);
-  const svg = `<svg width="100%" height="300">`;
+  let svg = `<svg width="100%" height="300">`;
   for (const size of sizeKeys) {
     const pnl = sizes[size];
     const x = sizeKeys.indexOf(size) * 50;

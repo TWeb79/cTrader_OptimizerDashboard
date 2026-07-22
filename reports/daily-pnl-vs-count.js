@@ -9,7 +9,7 @@ export default async function dailyPnlVsCount(events) {
     }
   }
   const dates = Object.keys(pnls);
-  const svg = `<svg width="100%" height="300">`;
+  let svg = `<svg width="100%" height="300">`;
   for (const date of dates) {
     const pnl = pnls[date];
     const count = counts[date];

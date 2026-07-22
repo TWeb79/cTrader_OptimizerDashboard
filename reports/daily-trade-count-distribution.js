@@ -9,7 +9,7 @@ export default async function dailyTradeCountDistribution(events) {
   const dates = Object.keys(trades).sort();
   const values = dates.map(d => trades[d]);
   const max = Math.max(...values);
-  const svg = `<svg width="100%" height="300">`;
+  let svg = `<svg width="100%" height="300">`;
   for (let i = 0; i < dates.length; i++) {
     const val = values[i];
     const barHeight = (val / max) * 200;

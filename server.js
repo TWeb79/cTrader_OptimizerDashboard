@@ -21,7 +21,7 @@ let events = JSON.parse(
 const reportsDir = path.join(__dirname, 'reports');
 const reportFiles = fs
   .readdirSync(reportsDir)
-  .filter((f) => f.endsWith('.js') && fs.statSync(path.join(reportsDir, f)).isFile() && !f.startsWith('daily-pnl'));
+  .filter((f) => f.endsWith('.js') && fs.statSync(path.join(reportsDir, f)).isFile());
 
 const reports = {};
 let reportCache = {};

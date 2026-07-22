@@ -9,7 +9,7 @@ export default async function winRateBySize(events) {
     }
   }
   const sizes = Object.keys(wins);
-  const svg = `<svg width="100%" height="300">`;
+  let svg = `<svg width="100%" height="300">`;
   for (const size of sizes) {
     const winCount = wins[size] || 0;
     const lossCount = losses[size] || 0;

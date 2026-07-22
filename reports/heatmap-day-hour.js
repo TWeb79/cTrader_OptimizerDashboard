@@ -9,7 +9,7 @@ export default async function heatmapDayHour(events) {
       trades[day][hour] = (trades[day][hour] || 0) + 1;
     }
   }
-  const svg = `<svg width="100%" height="300">`;
+  let svg = `<svg width="100%" height="300">`;
   for (const day in Object.keys(trades)) {
     for (const hour in Object.keys(trades[day])) {
       const count = trades[day][hour];
