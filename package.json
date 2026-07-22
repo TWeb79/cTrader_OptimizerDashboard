@@ -1,0 +1,16 @@
+{
+  "name": "54-botanalytics",
+  "version": "1.0.0",
+  "description": "Trading bot analytics dashboard",
+  "author": "Inventions4All - github:TWeb79",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "docker:build": "docker build -t 54-botanalytics-web .",
+    "docker:run": "docker compose up --build"
+  },
+"dependencies": {
+     "express": "^4.21.2",
+     "multer": "^2.2.0"
+   }
+}

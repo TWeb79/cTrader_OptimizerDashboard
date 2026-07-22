@@ -1,0 +1,34 @@
+- generic [ref=f7e2]:
+  - complementary [ref=f7e3]:
+    - generic [ref=f7e4]:
+      - heading "BotAnalytics" [level=1] [ref=f7e5]
+      - generic [ref=f7e6]: v1.0.0
+    - navigation [ref=f7e7]:
+      - button "Cumulative P&L with Drawdown Account growth over time with drawdown shaded." [active] [ref=f7e8] [cursor=pointer]:
+        - generic [ref=f7e9]: Cumulative P&L with Drawdown
+        - generic [ref=f7e10]: Account growth over time with drawdown shaded.
+      - button "Distribution of Daily Losses Histogram of losing days with mean and median markers." [ref=f7e11] [cursor=pointer]:
+        - generic [ref=f7e12]: Distribution of Daily Losses
+        - generic [ref=f7e13]: Histogram of losing days with mean and median markers.
+      - button "Daily P&L (Chronological) Daily profit/loss for each trading day. Green = profitable, Red = losing." [ref=f7e14] [cursor=pointer]:
+        - generic [ref=f7e15]: Daily P&L (Chronological)
+        - generic [ref=f7e16]: Daily profit/loss for each trading day. Green = profitable, Red = losing.
+      - button "Position Size vs Trade P&L Scatter of position volume versus trade P&L. Green = win, Red = loss." [ref=f7e17] [cursor=pointer]:
+        - generic [ref=f7e18]: Position Size vs Trade P&L
+        - generic [ref=f7e19]: Scatter of position volume versus trade P&L. Green = win, Red = loss.
+      - button "Time Analysis At what times of the day do you consistently make or lose money?" [ref=f7e20] [cursor=pointer]:
+        - generic [ref=f7e21]: Time Analysis
+        - generic [ref=f7e22]: At what times of the day do you consistently make or lose money?
+      - button "Trades per Day vs Daily P&L Relationship between number of trades and daily profit/loss." [ref=f7e23] [cursor=pointer]:
+        - generic [ref=f7e24]: Trades per Day vs Daily P&L
+        - generic [ref=f7e25]: Relationship between number of trades and daily profit/loss.
+      - button "Cumulative P&L Impact of Worst Days Two equity curves showing damage from extreme losses." [ref=f7e26] [cursor=pointer]:
+        - generic [ref=f7e27]: Cumulative P&L Impact of Worst Days
+        - generic [ref=f7e28]: Two equity curves showing damage from extreme losses.
+  - main [ref=f7e29]:
+    - generic [ref=f7e31] [cursor=pointer]:
+      - generic [ref=f7e32]: 📁
+      - generic [ref=f7e33]: Drop events.json files here
+      - generic [ref=f7e34]: or click to browse
+      - button "Choose File" [ref=f7e35]
+    - generic [ref=f7e36]: Please upload a JSON file to view reports.

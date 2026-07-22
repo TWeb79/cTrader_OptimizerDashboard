@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BotAnalytics</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div>
+        <h1 class="brand">BotAnalytics</h1>
+        <div class="version" id="app-version">v1.0.0</div>
+      </div>
+      <nav id="report-nav"></nav>
+    </aside>
+    <main class="main" id="report-main">
+      <div id="drop-zone">
+        <div class="drop-content">
+          <div class="drop-icon">📁</div>
+          <div class="drop-text">Drop events.json files here</div>
+          <div class="drop-subtext">or click to browse</div>
+          <input type="file" id="file-input" accept="application/json" multiple />
+        </div>
+      </div>
+      <div id="file-chips" class="file-chips"></div>
+      <div id="reports-container" class="reports-container"></div>
+      <div id="fullscreen-overlay" class="fullscreen-overlay">
+        <button class="fullscreen-close">&times;</button>
+        <div class="fullscreen-content" id="fullscreen-content"></div>
+      </div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
