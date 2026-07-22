@@ -47,10 +47,11 @@ export default async function cumulativePnLWithDrawdown(events) {
   svg += `<path d="${path}" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linejoin="round" />`;
   svg += `<line x1="${pad}" y1="${pad}" x2="${w - pad}" y2="${pad}" stroke="#334155" stroke-dasharray="3" />`;
   svg += `<text x="${w / 2}" y="${h - 8}" fill="#94a3b8" font-size="12" text-anchor="middle">Time</text>`;
+  svg += `<text x="14" y="${h/2}" fill="#94a3b8" font-size="12" text-anchor="middle" transform="rotate(-90 14 ${h/2})">Equity / Drawdown ($)</text>`;
   svg += `</svg>`;
   const legend = `<div style="display:flex;gap:16px;justify-content:center;margin-top:8px;color:#94a3b8;font-size:13px;">
     <span><span style="display:inline-block;width:12px;height:3px;background:#38bdf8;margin-right:4px;"></span>Equity</span>
     <span><span style="display:inline-block;width:12px;height:8px;background:#ef4444;opacity:0.4;margin-right:4px;"></span>Drawdown</span>
   </div>`;
-  return { title: 'Cumulative P&L with Drawdown', description: 'Account growth over time with drawdown shaded.', html: svg + legend };
+  return { title: 'Cumulative P&L with Drawdown', description: 'Account growth over time with drawdown shaded.', html: svg + legend, category: 'P&L & Returns' };
 }

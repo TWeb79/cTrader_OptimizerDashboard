@@ -30,6 +30,8 @@ export default async function dailyPnl(events) {
   svg += `<line x1="${pad}" y1="${h - pad}" x2="${w - pad}" y2="${h - pad}" stroke="#475569" />`;
   svg += `<line x1="${pad}" y1="${pad}" x2="${pad}" y2="${h - pad}" stroke="#475569" />`;
   svg += `<line x1="${pad}" y1="${h / 2}" x2="${w - pad}" y2="${h / 2}" stroke="#334155" stroke-dasharray="4" />`;
+  svg += `<text x="14" y="${h/2}" fill="#94a3b8" font-size="12" text-anchor="middle" transform="rotate(-90 14 ${h/2})">P&L ($)</text>`;
+  svg += `<text x="${w/2}" y="${h - 10}" fill="#94a3b8" font-size="12" text-anchor="middle">Date</text>`;
 
   const barW = Math.max(2, chartW / days.length - 1);
   for (let i = 0; i < days.length; i++) {
@@ -52,5 +54,6 @@ export default async function dailyPnl(events) {
     title: 'Daily P&L (Chronological)',
     description: 'Daily profit/loss for each trading day. Green = profitable, Red = losing.',
     html: svg,
+    category: 'P&L & Returns',
   };
 }

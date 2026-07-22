@@ -5,11 +5,12 @@ export default async function timeAnalysis(events) {
     const ev = String(e.event || '');
     if (ev === 'Create Position') {
       pos[String(e.positionId)] = { ...e, enter: Number(e.time) };
-    } else if (ev === 'Stop Loss Hit' && e.closePrice != null) {
+    } else if ((ev === 'Stop Loss Hit' || ev === 'Position closed') && e.closePrice != null) {
       const p = pos[String(e.positionId)];
       if (p && !p.exit) {
         p.exit = Number(e.time);
         p.profit = Number(e.grossProfit) || 0;
+        p.closeEvent = ev;
         trades.push(p);
       }
     }
@@ -148,10 +149,13 @@ export default async function timeAnalysis(events) {
     let di = durBuckets.findIndex((v, i, a) => t.dur >= v && t.dur < a[i+1]);
     if (di < 0) di = durBuckets.length - 2;
     const key = `${bucket15(t.minOfDay)}_${di}`;
-    if (!heatData[key]) heatData[key] = [];
-    heatData[key].push(t.r);
+    if (!heatData[key]) heatData[key] = { rValues: [], wins: 0, losses: 0, count: 0 };
+    heatData[key].rValues.push(t.r);
+    heatData[key].count += 1;
+    if (t.profit > 0) heatData[key].wins += 1;
+    if (t.profit < 0) heatData[key].losses += 1;
   }
-  const hv = Object.values(heatData).map(arr => arr.reduce((a,b)=>a+b,0)/arr.length);
+  const hv = Object.values(heatData).map(d => d.rValues.reduce((a,b)=>a+b,0)/d.rValues.length);
   const hmin = Math.min(...hv, -0.5), hmax = Math.max(...hv, 0.5);
   const heatColor = (v) => {
     if (hmax === hmin) return '#334155';
@@ -166,9 +170,9 @@ export default async function timeAnalysis(events) {
     heatHtml += `<tr><th style="padding:6px;background:#1e293b;color:#94a3b8;text-align:right;">${durLabels[di]}</th>`;
     for (const b of activeStartBuckets) {
       const key = `${b}_${di}`;
-      const arr = heatData[key];
-      const val = arr ? arr.reduce((a,x)=>a+x,0)/arr.length : null;
-      if (val != null) heatHtml += `<td style="padding:6px;background:${heatColor(val)};color:#e2e8f0;text-align:center;">${val.toFixed(2)}</td>`;
+      const data = heatData[key];
+      const val = data ? data.rValues.reduce((a,x)=>a+x,0)/data.rValues.length : null;
+      if (val != null) heatHtml += `<td style="padding:6px;background:${heatColor(val)};color:#e2e8f0;text-align:center;" title="Avg R: ${val.toFixed(2)} | Trades: ${data.count} | Wins: ${data.wins} | Losses: ${data.losses}">${val.toFixed(2)}</td>`;
       else heatHtml += `<td style="padding:6px;background:#0f172a;color:#475569;text-align:center;">-</td>`;
     }
     heatHtml += `</tr>`;
@@ -218,10 +222,13 @@ export default async function timeAnalysis(events) {
   const wdHeat = {};
   for (const t of trades) {
     const key = `${t.weekday}_${t.hour}`;
-    if (!wdHeat[key]) wdHeat[key] = [];
-    wdHeat[key].push(t.r);
+    if (!wdHeat[key]) wdHeat[key] = { rValues: [], wins: 0, losses: 0, count: 0 };
+    wdHeat[key].rValues.push(t.r);
+    wdHeat[key].count += 1;
+    if (t.profit > 0) wdHeat[key].wins += 1;
+    if (t.profit < 0) wdHeat[key].losses += 1;
   }
-  const wvv = Object.values(wdHeat).map(arr => arr.reduce((a,b)=>a+b,0)/arr.length);
+  const wvv = Object.values(wdHeat).map(d => d.rValues.reduce((a,b)=>a+b,0)/d.rValues.length);
   const wmin = Math.min(...wvv, -0.5), wmax = Math.max(...wvv, 0.5);
   html.push(`<div class="report-body"><h3>Weekday × Hour Heatmap</h3>`);
   html.push(`<table style="border-collapse:collapse;font-size:12px;margin-top:8px;"><thead><tr><th style="padding:6px;background:#1e293b;color:#94a3b8;"></th>`);
@@ -231,13 +238,13 @@ export default async function timeAnalysis(events) {
     html.push(`<tr><th style="padding:6px;background:#1e293b;color:#94a3b8;text-align:right;">${dayNames[d]}</th>`);
     for (let h = 0; h < 24; h++) {
       const key = `${d}_${h}`;
-      const arr = wdHeat[key];
-      if (arr) {
-        const v = arr.reduce((a,x)=>a+x,0)/arr.length;
-        const t = wmax===wmin ? 0.5 : (v-wmin)/(wmax-wmin);
-        const c = t >= 0.5 ? `rgb(${Math.round(34+(251-34)*(t-0.5)*2)},${Math.round(197+(191-197)*(t-0.5)*2)},${Math.round(94+(36-94)*(t-0.5)*2)})` : `rgb(${Math.round(239+(251-239)*t*2)},${Math.round(68+(191-68)*t*2)},${Math.round(68+(36-68)*t*2)})`;
-        html.push(`<td style="padding:6px;background:${c};color:#e2e8f0;text-align:center;">${v.toFixed(1)}</td>`);
-      } else html.push(`<td style="padding:6px;background:#0f172a;color:#475569;text-align:center;">-</td>`);
+      const data = wdHeat[key];
+       if (data) {
+         const v = data.rValues.reduce((a,x)=>a+x,0)/data.rValues.length;
+         const t = wmax===wmin ? 0.5 : (v-wmin)/(wmax-wmin);
+         const c = t >= 0.5 ? `rgb(${Math.round(34+(251-34)*(t-0.5)*2)},${Math.round(197+(191-197)*(t-0.5)*2)},${Math.round(94+(36-94)*(t-0.5)*2)})` : `rgb(${Math.round(239+(251-239)*t*2)},${Math.round(68+(191-68)*t*2)},${Math.round(68+(36-68)*t*2)})`;
+         html.push(`<td class="wd-cell" data-w="${data.wins}" data-l="${data.losses}" style="padding:6px;background:${c};color:#e2e8f0;text-align:center;cursor:pointer;" title="Click to toggle W/L">${v.toFixed(1)}</td>`);
+       } else html.push(`<td style="padding:6px;background:#0f172a;color:#475569;text-align:center;">-</td>`);
     }
     html.push(`</tr>`);
   }
@@ -315,5 +322,5 @@ export default async function timeAnalysis(events) {
   }
   html.push(`</tbody></table></div>`);
 
-  return { title: 'Time Analysis', description: 'At what times of the day do you consistently make or lose money?', html: html.join('') };
+  return { title: 'Time Analysis', description: 'At what times of the day do you consistently make or lose money?', html: html.join(''), category: 'Time & Scheduling' };
 }

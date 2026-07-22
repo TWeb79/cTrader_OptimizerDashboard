@@ -60,6 +60,15 @@ html, body {
   overflow-y: auto;
 }
 
+.nav-category-header {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 8px;
+  padding: 4px 12px;
+}
+
 .report-btn {
   background: transparent;
   border: 1px solid transparent;
@@ -325,3 +334,110 @@ html, body {
   font-size: 24px;
   cursor: pointer;
 }
+
+.trade-detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.95);
+  z-index: 1001;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.trade-detail-overlay.open {
+  display: flex;
+}
+
+.trade-detail-content {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.trade-detail-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.trade-link {
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.trade-link:hover {
+  color: var(--accent-2);
+}
+
+.event-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.event-card {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+}
+
+.event-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.event-type {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.event-time {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.event-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.event-field-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.event-field-value {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+}
+

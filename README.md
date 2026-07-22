@@ -40,6 +40,7 @@ docker compose up --build
 |--------|-----------------------|------------------------------|
 | GET    | /api/reports          | List available reports       |
 | GET    | /api/reports/:id      | Get report data by id        |
+| GET    | /api/trades/:positionId | Get event timeline for a specific trade |
 | GET    | /api/version          | Get app version metadata     |
 
 ## Example Requests
@@ -47,11 +48,16 @@ docker compose up --build
 ```bash
 curl http://localhost:8054/api/reports
 curl http://localhost:8054/api/reports/heatmap-day-hour
+curl http://localhost:8054/api/trades/482
 curl http://localhost:8054/api/version
 ```
 
 ## Reports
 
 Reports are located in the `reports/` directory. Each file exports a default async function that receives the events array and returns an object with `title`, `description`, and `html`.
+
+### Trade Detail Inspection
+
+Several reports expose clickable position IDs. Clicking on a position ID opens a modal showing the full lifecycle of that trade (Create Position → modifications → close). This is powered by the `/api/trades/:positionId` endpoint and useful for debugging failed trades or analyzing entry/exit patterns.
 
 Author: Inventions4All - github:TWeb79

@@ -17,10 +17,13 @@ export default async function dailyTradeCountDistribution(events) {
     const y = 250 - barHeight;
     svg += `<rect x="${x}" y="${y}" width="10" height="${barHeight}" fill="#22c55e" />`;
   }
+  svg += `<text x="50" y="290" fill="#94a3b8" font-size="11" text-anchor="middle">Date</text>`;
+  svg += `<text x="14" y="150" fill="#94a3b8" font-size="11" text-anchor="middle" transform="rotate(-90 14 150)">Trade Count</text>`;
   svg += `</svg>`;
   return {
     title: 'Daily Trade Count Distribution',
     description: 'Distribution of daily trade counts.',
     html: svg,
+    category: 'P&L & Returns',
   };
 }

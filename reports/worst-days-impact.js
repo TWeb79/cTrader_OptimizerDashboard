@@ -57,11 +57,12 @@ export default async function worstDaysImpact(events) {
   svg += line(actual, '#38bdf8');
   svg += line(withoutWorst, '#f472b6');
   svg += `<text x="${w/2}" y="${h-8}" fill="#94a3b8" font-size="12" text-anchor="middle">Time</text>`;
+  svg += `<text x="14" y="${h/2}" fill="#94a3b8" font-size="12" text-anchor="middle" transform="rotate(-90 14 ${h/2})">Cumulative P&L ($)</text>`;
   svg += `</svg>`;
   const legend = `<div style="display:flex;gap:16px;justify-content:center;margin-top:8px;color:#94a3b8;font-size:13px;">
     <span><span style="display:inline-block;width:12px;height:3px;background:#38bdf8;margin-right:4px;"></span>Actual</span>
     <span><span style="display:inline-block;width:12px;height:3px;background:#f472b6;margin-right:4px;"></span>Without worst day</span>
     <span>${worst} lost ${dailyMap[worst].toFixed(1)}</span>
   </div>`;
-  return { title: 'Cumulative P&L Impact of Worst Days', description: 'Two equity curves showing damage from extreme losses.', html: svg + legend };
+  return { title: 'Cumulative P&L Impact of Worst Days', description: 'Two equity curves showing damage from extreme losses.', html: svg + legend, category: 'P&L & Returns' };
 }

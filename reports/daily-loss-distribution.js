@@ -51,11 +51,13 @@ export default async function dailyLossDistribution(events) {
   const medY = 250 - (median - min) / (max - min || 1) * chartH;
   svg += `<line x1="${pad}" y1="${meanY}" x2="${totalW - pad}" y2="${meanY}" stroke="#38bdf8" stroke-dasharray="3" />`;
   svg += `<line x1="${pad}" y1="${medY}" x2="${totalW - pad}" y2="${medY}" stroke="#22d3ee" stroke-dasharray="3" />`;
+  svg += `<text x="${totalW/2}" y="296" fill="#94a3b8" font-size="11" text-anchor="middle">Loss Amount ($)</text>`;
+  svg += `<text x="14" y="150" fill="#94a3b8" font-size="11" text-anchor="middle" transform="rotate(-90 14 150)">Frequency</text>`;
   svg += `</svg>`;
   const legend = `<div style="display:flex;gap:16px;justify-content:center;margin-top:8px;color:#94a3b8;font-size:13px;">
     <span>Days: ${losses.length}</span>
     <span>Mean: ${mean.toFixed(1)}</span>
     <span>Median: ${median.toFixed(1)}</span>
   </div>`;
-  return { title: 'Distribution of Daily Losses', description: 'Histogram of losing days with mean and median markers.', html: svg + legend };
+  return { title: 'Distribution of Daily Losses', description: 'Histogram of losing days with mean and median markers.', html: svg + legend, category: 'P&L & Returns' };
 }

@@ -27,6 +27,7 @@ export default async function tradesVsPnl(events) {
     title: 'Trades per Day vs Daily P&L',
     description: 'Relationship between number of trades and daily profit/loss.',
     html: svg + label,
+    category: 'P&L & Returns',
   };
 }
 

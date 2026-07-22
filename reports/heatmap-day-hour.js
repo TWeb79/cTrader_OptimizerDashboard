@@ -16,9 +16,12 @@ export default async function (events) {
     const day = dayNames[d.getDay()];
     const hour = d.getHours();
     const key = `${day}|${hour}`;
-    if (!cellData[key]) cellData[key] = { sum: 0, count: 0 };
-    cellData[key].sum += Number(trade.grossProfit) || 0;
+    const profit = Number(trade.grossProfit) || 0;
+    if (!cellData[key]) cellData[key] = { sum: 0, count: 0, wins: 0, losses: 0 };
+    cellData[key].sum += profit;
     cellData[key].count += 1;
+    if (profit > 0) cellData[key].wins += 1;
+    if (profit < 0) cellData[key].losses += 1;
   }
 
   const cells = [];
@@ -29,6 +32,8 @@ export default async function (events) {
       hour: parseInt(hourStr, 10),
       avg: val.sum / val.count,
       count: val.count,
+      wins: val.wins,
+      losses: val.losses,
     });
   }
 
@@ -65,7 +70,7 @@ export default async function (events) {
     for (let h = 0; h < 24; h++) {
       const cell = cells.find((c) => c.day === day && c.hour === h);
       if (cell) {
-        html += `<td class="cell" style="background:${getColor(cell.avg)}" title="Avg profit: ${cell.avg.toFixed(2)} (${cell.count} trades)">${cell.avg.toFixed(1)}</td>`;
+         html += `<td class="cell" style="background:${getColor(cell.avg)}" title="Avg: ${cell.avg.toFixed(2)} | Trades: ${cell.count} | Wins: ${cell.wins} | Losses: ${cell.losses}">${cell.avg.toFixed(1)}</td>`;
       } else {
         html += `<td class="cell empty">-</td>`;
       }
@@ -80,5 +85,6 @@ export default async function (events) {
     title: 'Day & Hour Performance Heatmap',
     description: 'Average gross profit of closed trades grouped by day of week and hour of day. Empty cells indicate no trades.',
     html,
+    category: 'Time & Scheduling',
   };
 }

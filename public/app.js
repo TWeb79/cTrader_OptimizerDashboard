@@ -7,6 +7,8 @@ const reportsContainer = document.getElementById('reports-container');
 const fileChipsContainer = document.getElementById('file-chips');
 const fullscreenOverlay = document.getElementById('fullscreen-overlay');
 const fullscreenContent = document.getElementById('fullscreen-content');
+const tradeDetailOverlay = document.getElementById('trade-detail-overlay');
+const tradeDetailContent = document.getElementById('trade-detail-content');
 let reports = [];
 let appVersion = '1.0.0';
 let uploadedFilesData = [];
@@ -33,12 +35,25 @@ async function loadReports() {
 
 function renderSidebar() {
   nav.innerHTML = '';
+  const groups = {};
   reports.forEach((report) => {
-    const btn = document.createElement('button');
-    btn.className = 'report-btn';
-    btn.innerHTML = `<div class="title">${escapeHtml(report.title)}</div><div class="desc">${escapeHtml(report.description)}</div>`;
-    btn.addEventListener('click', () => selectReport(report.id, btn));
-    nav.appendChild(btn);
+    const cat = report.category || 'Other';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(report);
+  });
+  const sortedCats = Object.keys(groups).sort();
+  sortedCats.forEach((cat) => {
+    const header = document.createElement('div');
+    header.className = 'nav-category-header';
+    header.textContent = cat;
+    nav.appendChild(header);
+    groups[cat].forEach((report) => {
+      const btn = document.createElement('button');
+      btn.className = 'report-btn';
+      btn.innerHTML = `<div class="title">${escapeHtml(report.title)}</div><div class="desc">${escapeHtml(report.description)}</div>`;
+      btn.addEventListener('click', () => selectReport(report.id, btn));
+      nav.appendChild(btn);
+    });
   });
 }
 
@@ -180,6 +195,85 @@ function openFullscreen(file, reportId) {
 function closeFullscreen() {
   fullscreenOverlay.classList.remove('open');
 }
+
+function openTradeDetail(positionId) {
+  tradeDetailContent.innerHTML = '<div class="empty-state">Loading trade details...</div>';
+  tradeDetailOverlay.classList.add('open');
+  fetch(`/api/trades/${encodeURIComponent(positionId)}`)
+    .then((res) => {
+      if (!res.ok) throw new Error('Trade not found');
+      return res.json();
+    })
+    .then((data) => {
+      const events = data.events || [];
+      const timeline = events
+        .map((ev) => {
+          const fields = Object.entries(ev)
+            .filter(([k]) => !['serial', 'orderId'].includes(k))
+            .map(([k, v]) => {
+              const display = v === null || v === undefined ? '<span style="color:#64748b">null</span>' : escapeHtml(String(v));
+              return `<div class="event-field"><div class="event-field-label">${escapeHtml(k)}</div><div class="event-field-value">${display}</div></div>`;
+            })
+            .join('');
+          const date = new Date(Number(ev.time));
+          const timeStr = date.toISOString().replace('T', ' ').slice(0, 19);
+          return `<div class="event-card">
+            <div class="event-card-header">
+              <div class="event-type">${escapeHtml(ev.event)}</div>
+              <div class="event-time">${timeStr}</div>
+            </div>
+            <div class="event-grid">${fields}</div>
+          </div>`;
+        })
+        .join('');
+      tradeDetailContent.innerHTML = `
+        <h2 style="margin-top:0">Position #${escapeHtml(String(data.positionId))}</h2>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:12px;">${events.length} event(s) in lifecycle</p>
+        <div class="event-timeline">${timeline}</div>
+      `;
+    })
+    .catch((err) => {
+      tradeDetailContent.innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
+    });
+}
+
+function closeTradeDetail() {
+  tradeDetailOverlay.classList.remove('open');
+}
+
+tradeDetailOverlay.querySelector('.trade-detail-close').addEventListener('click', closeTradeDetail);
+tradeDetailOverlay.addEventListener('click', (e) => {
+  if (e.target === tradeDetailOverlay) closeTradeDetail();
+});
+
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('trade-link')) {
+    const pid = e.target.dataset.positionId;
+    if (pid != null) openTradeDetail(pid);
+  }
+  if (e.target.classList.contains('wd-cell')) {
+    const cell = e.target;
+    const w = cell.dataset.w;
+    const l = cell.dataset.l;
+    if (cell.dataset.showingWl === 'true') {
+      cell.textContent = cell.dataset.avg;
+      cell.dataset.showingWl = 'false';
+      cell.style.opacity = '1';
+    } else {
+      cell.dataset.avg = cell.textContent;
+      cell.textContent = `${w}W / ${l}L`;
+      cell.dataset.showingWl = 'true';
+      cell.style.opacity = '0.85';
+    }
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (tradeDetailOverlay.classList.contains('open')) closeTradeDetail();
+    else if (fullscreenOverlay.classList.contains('open')) closeFullscreen();
+  }
+});
 
 async function handleFile(fileList) {
   if (!fileList || fileList.length === 0) return;

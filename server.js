@@ -81,6 +81,7 @@ app.get('/api/reports', (req, res) => {
     id,
     title: data.title,
     description: data.description,
+    category: data.category,
     version: data.version,
   }));
   res.json({ version: APP_VERSION, reports: list });
@@ -93,6 +94,21 @@ app.get('/api/reports/:id', (req, res) => {
     return res.status(404).json({ error: 'Report not found' });
   }
   res.json({ ...data, version: APP_VERSION });
+});
+
+app.get('/api/trades/:positionId', (req, res) => {
+  const { positionId } = req.params;
+  const pid = Number(positionId);
+  if (Number.isNaN(pid)) {
+    return res.status(400).json({ error: 'Invalid positionId' });
+  }
+  const tradeEvents = events
+    .filter((e) => Number(e.positionId) === pid)
+    .sort((a, b) => Number(a.time) - Number(b.time));
+  if (tradeEvents.length === 0) {
+    return res.status(404).json({ error: 'Position not found' });
+  }
+  res.json({ positionId: pid, events: tradeEvents, version: APP_VERSION });
 });
 
 app.get('/api/version', (req, res) => {
