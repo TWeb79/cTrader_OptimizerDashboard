@@ -14,3 +14,4 @@ coverage/
 *.pid.lock
 playwright-report/
 test-results/
+.playwright-mcp/
