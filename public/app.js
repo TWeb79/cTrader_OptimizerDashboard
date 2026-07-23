@@ -14,6 +14,51 @@ let appVersion = '1.0.0';
 let uploadedFilesData = [];
 let activeReportId = null;
 
+const CATEGORY_ICONS = {
+  'P&L & Returns': '💰',
+  'Risk & Loss Analysis': '🛡️',
+  'Trade Quality & Sizing': '⚖️',
+  'Time & Scheduling': '🕐',
+};
+const REPORT_ICONS = {
+  'drawdown-recovery': '📉',
+  'optimal-sl-recommendation': '🎯',
+  'sl-modification-cadence': '🔧',
+  'sl-reaction-latency': '⏱️',
+  'win-loss-anatomy': '🔀',
+  'loss-autopsy': '🔍',
+  'quick-scalp-segment': '⚡',
+  'position-size-vs-pnl': '📦',
+  'time-analysis': '🕐',
+  'follow-trade-after-loss': '🔁',
+  'overtrading-analysis': '🔥',
+  'strategy-forensics': '🧪',
+  'naked-exposure': '🚨',
+  'concurrent-position-stacked-exposure': '🧱',
+  'risk-consistency-audit': '📏',
+  'sl-hit-analysis': '💥',
+  'daily-loss-distribution': '📊',
+  'lost-opportunity': '💎',
+  'trades-vs-pnl': '📈',
+  'trail-efficiency': '🐢',
+  'trade-streaks': '📶',
+  'consecutive-days-impact': '📅',
+  'weekly-consistency': '📆',
+  'monthly-consistency': '🗓️',
+  'daily-overview': '📋',
+  'hour-minute-performance': '⏰',
+  'minute-performance': '⏱️',
+  'market-session-analysis': '🌍',
+  'gap-trade-session-edge': '🔲',
+  'calendar-day-performance': '📆',
+  'position-modification-impact': '🛠️',
+  'trade-duration-optimality': '⏳',
+  'direction-sizing-bias': '🧭',
+  'breakeven-stop-effectiveness': '⚖️',
+  'daily-loss-distribution': '📉',
+  'lost-opportunity': '🎯',
+};
+
 async function loadReports() {
   try {
     const [metaRes, reportsRes] = await Promise.all([
@@ -50,7 +95,8 @@ function renderSidebar() {
     groups[cat].forEach((report) => {
       const btn = document.createElement('button');
       btn.className = 'report-btn';
-      btn.innerHTML = `<div class="title">${escapeHtml(report.title)}</div><div class="desc">${escapeHtml(report.description)}</div>`;
+      const icon = REPORT_ICONS[report.id] || CATEGORY_ICONS[cat] || '📊';
+      btn.innerHTML = `<div class="report-btn-row"><span class="report-icon">${icon}</span><div class="title">${escapeHtml(report.title)}</div></div><div class="desc">${escapeHtml(report.description)}</div>`;
       btn.addEventListener('click', () => selectReport(report.id, btn));
       nav.appendChild(btn);
     });
