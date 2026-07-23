@@ -48,7 +48,7 @@ export default async function slHitAnalysis(events) {
 
   html.push(`<div style="display:flex;flex-wrap:wrap;margin-bottom:16px;">${kpis.map(k => `<div style="${cardStyle}"><div style="${labelStyle}">${k[0]}</div><div style="${valueStyle}">${k[1]}</div></div>`).join('')}</div>`);
 
-  html.push(`<div class="report-body"><h3>Event Type Performance</h3><p style="color:#94a3b8;font-size:13px;margin-bottom:8px;">Comparing Stop Loss hits vs manual position closes. Note: "Stop Loss Hit" does NOT mean a loss — most are trailing stops capturing gains.</p>`);
+  html.push(`<div class="report-body"><h3>Event Type Performance</h3><p style="color:#94a3b8;font-size:13px;margin-bottom:8px;">Comparing Stop Loss hits vs manual position closes. Note: "Stop Loss Hit" does NOT mean a loss — most are trailing stops capturing gains. <br><strong>Manual Close</strong> = trader closed the position before SL/TP was triggered. Manual exits without a stop loss are especially dangerous; they indicate either emotional intervention or missing risk discipline.</p>`);
   html.push(`<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;"><thead><tr style="background:#1e293b;color:#94a3b8;"><th style="padding:8px;text-align:left;">Event</th><th style="padding:8px;text-align:right;">Count</th><th style="padding:8px;text-align:right;">Profitable</th><th style="padding:8px;text-align:right;">Losing</th><th style="padding:8px;text-align:right;">Total P&L</th><th style="padding:8px;text-align:right;">Profit Factor</th></tr></thead><tbody>`);
 
   const slPF = Math.abs(slLossTotal) > 0 ? slProfitTotal / Math.abs(slLossTotal) : (slProfitTotal > 0 ? 999 : 0);

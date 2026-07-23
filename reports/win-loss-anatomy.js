@@ -93,6 +93,7 @@ export default async function winLossAnatomy(events) {
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const dayWin = {};
   const dayLoss = {};
+  const dayTrades = {};
   for (const t of closed) {
     const d = new Date(Number(t.time));
     const day = dayNames[d.getDay()];
@@ -101,14 +102,30 @@ export default async function winLossAnatomy(events) {
     if (!dayLoss[day]) dayLoss[day] = { count: 0, total: 0 };
     if (p > 0) { dayWin[day].count++; dayWin[day].total += p; }
     else if (p < 0) { dayLoss[day].count++; dayLoss[day].total += p; }
+    if (!dayTrades[day]) dayTrades[day] = [];
+    dayTrades[day].push(t);
   }
 
-  html.push(`<div class="report-body"><h3>Win vs Loss by Day</h3><table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;"><thead><tr style="background:#1e293b;color:#94a3b8;"><th style="padding:8px;text-align:left;">Day</th><th style="padding:8px;text-align:right">Wins</th><th style="padding:8px;text-align:right">Losses</th><th style="padding:8px;text-align:right">Win P&L</th><th style="padding:8px;text-align:right">Loss P&L</th><th style="padding:8px;text-align:right">Net</th></tr></thead><tbody>`);
+  html.push(`<div class="report-body"><h3>Win vs Loss by Day</h3><p style="color:#94a3b8;font-size:13px;margin-bottom:8px;">Click a day to expand its trades.</p><table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;"><thead><tr style="background:#1e293b;color:#94a3b8;"><th style="padding:8px;text-align:left;">Day</th><th style="padding:8px;text-align:right">Wins</th><th style="padding:8px;text-align:right">Losses</th><th style="padding:8px;text-align:right">Win P&L</th><th style="padding:8px;text-align:right">Loss P&L</th><th style="padding:8px;text-align:right">Net</th></tr></thead><tbody>`);
   for (const day of dayNames) {
     const w = dayWin[day] || { count: 0, total: 0 };
     const l = dayLoss[day] || { count: 0, total: 0 };
     const net = w.total + l.total;
-    html.push(`<tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px;color:#94a3b8;">${day}</td><td style="padding:8px;text-align:right">${w.count}</td><td style="padding:8px;text-align:right">${l.count}</td><td style="padding:8px;text-align:right;color:#22c55e;">${w.total.toFixed(1)}</td><td style="padding:8px;text-align:right;color:#ef4444;">${l.total.toFixed(1)}</td><td style="padding:8px;text-align:right;color:${net >= 0 ? '#22c55e' : '#ef4444'};">${net.toFixed(1)}</td></tr>`);
+    html.push(`<tr style="border-bottom:1px solid #1e293b;cursor:pointer;" class="day-row" data-day="${day}"><td style="padding:8px;color:#e2e8f0;">${day}</td><td style="padding:8px;text-align:right">${w.count}</td><td style="padding:8px;text-align:right">${l.count}</td><td style="padding:8px;text-align:right;color:#22c55e;">${w.total.toFixed(1)}</td><td style="padding:8px;text-align:right;color:#ef4444;">${l.total.toFixed(1)}</td><td style="padding:8px;text-align:right;color:${net >= 0 ? '#22c55e' : '#ef4444'};">${net.toFixed(1)}</td></tr>`);
+    const trades = dayTrades[day] || [];
+    html.push(`<tr class="day-trades-row" data-day="${day}" style="display:none;"><td colspan="6" style="padding:8px;background:#0f172a;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#1e293b;color:#94a3b8;"><th style="padding:6px;text-align:left;">Position</th><th style="padding:6px;text-align:left">Time</th><th style="padding:6px;text-align:left">Type</th><th style="padding:6px;text-align:right">Volume</th><th style="padding:6px;text-align:right">P&L</th><th style="padding:6px;text-align:right">Pips</th></tr></thead><tbody>`);
+    for (const t of trades.sort((a, b) => Number(a.time) - Number(b.time)).slice(0, 20)) {
+      const d = new Date(Number(t.time));
+      const timeStr = d.toISOString().slice(11, 16);
+      const p = Number(t.grossProfit);
+      const pips = Number(t.pips) || 0;
+      const color = p > 0 ? '#22c55e' : p < 0 ? '#ef4444' : '#94a3b8';
+      html.push(`<tr style="border-bottom:1px solid #1e293b;"><td style="padding:6px;color:#94a3b8;"><span class="trade-link" data-position-id="${t.positionId}">#${t.positionId}</span></td><td style="padding:6px;color:#e2e8f0;">${timeStr}</td><td style="padding:6px;color:#e2e8f0;">${t.type}</td><td style="padding:6px;text-align:right">${t.volume}</td><td style="padding:6px;text-align:right;color:${color};">${p.toFixed(1)}</td><td style="padding:6px;text-align:right;color:${color};">${pips.toFixed(1)}</td></tr>`);
+    }
+    if (trades.length > 20) {
+      html.push(`<tr><td colspan="6" style="padding:6px;color:#94a3b8;text-align:center;">... and ${trades.length - 20} more trades</td></tr>`);
+    }
+    html.push(`</tbody></table></td></tr>`);
   }
   html.push(`</tbody></table></div>`);
 

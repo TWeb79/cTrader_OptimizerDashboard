@@ -79,6 +79,9 @@ export default async function minutePerformance(events) {
     const y = r.avg >= 0 ? 250 - h : 250;
     const color = r.avg >= 0 ? '#22c55e' : '#ef4444';
     html.push(`<rect x="${x - barW/2}" y="${y}" width="${barW}" height="${h}" fill="${color}" rx="1" />`);
+    if (r.min % 5 === 0) {
+      html.push(`<text x="${x}" y="265" fill="#94a3b8" font-size="9" text-anchor="middle">${String(r.min).padStart(2,'0')}</text>`);
+    }
   }
   html.push(`<text x="14" y="130" fill="#94a3b8" font-size="11" text-anchor="middle" transform="rotate(-90 14 130)">Avg P&L ($)</text>`);
   html.push(`</svg></div>`);

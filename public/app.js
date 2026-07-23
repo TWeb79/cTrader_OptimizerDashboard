@@ -266,6 +266,15 @@ document.addEventListener('click', (e) => {
       cell.style.opacity = '0.85';
     }
   }
+  const dayRow = e.target.closest('.day-row');
+  if (dayRow) {
+    const day = dayRow.dataset.day;
+    const row2 = document.querySelector(`.day-trades-row[data-day="${day}"]`);
+    if (row2) {
+      const visible = row2.style.display !== 'none';
+      row2.style.display = visible ? 'none' : 'table-row';
+    }
+  }
 });
 
 document.addEventListener('keydown', (e) => {

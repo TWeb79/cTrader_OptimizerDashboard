@@ -1,15 +1,33 @@
 export default async function positionSizeVsPnl(events) {
-  const buckets = { '<0.5': { total: 0, count: 0, wins: 0, losses: 0 }, '0.5-1.0': { total: 0, count: 0, wins: 0, losses: 0 }, '1.0-1.5': { total: 0, count: 0, wins: 0, losses: 0 }, '1.5-2.0': { total: 0, count: 0, wins: 0, losses: 0 }, '2.0+': { total: 0, count: 0, wins: 0, losses: 0 } };
+  const bucketDefs = [
+    [0, 1],
+    [1, 2],
+    [2, 4],
+    [4, 6],
+    [6, 8],
+    [8, 10],
+    [10, 12],
+    [12, 15],
+    [15, 20],
+    [20, Infinity],
+  ];
+  const buckets = {};
+  for (const [lo, hi] of bucketDefs) {
+    const label = hi === Infinity ? lo + '+' : lo + '-' + hi;
+    buckets[label] = { total: 0, count: 0, wins: 0, losses: 0 };
+  }
   for (const e of events) {
     if (e.closePrice != null) {
       const v = Number(e.volume) || 0;
       const p = Number(e.grossProfit) || 0;
-      let key = '2.0+';
-      if (v < 0.5) key = '<0.5';
-      else if (v < 1.0) key = '0.5-1.0';
-      else if (v < 1.5) key = '1.0-1.5';
-      else if (v < 2.0) key = '1.5-2.0';
-      if (buckets[key]) {
+      let key = null;
+      for (const [lo, hi] of bucketDefs) {
+        if (v >= lo && (hi === Infinity || v < hi)) {
+          key = hi === Infinity ? lo + '+' : lo + '-' + hi;
+          break;
+        }
+      }
+      if (key && buckets[key]) {
         buckets[key].total += p;
         buckets[key].count += 1;
         if (p > 0) buckets[key].wins += 1;
@@ -20,22 +38,22 @@ export default async function positionSizeVsPnl(events) {
 
   const keys = Object.keys(buckets);
   const maxVal = Math.max(...keys.map(k => Math.abs(buckets[k].total)), 1);
-  const maxCount = Math.max(...keys.map(k => buckets[k].count), 1);
 
-  let svg = `<svg viewBox="0 0 960 300" style="width:100%;height:auto;min-height:240px;">`;
-  svg += `<line x1="40" y1="260" x2="940" y2="260" stroke="#475569" />`;
+  let svg = `<svg viewBox="0 0 1200 300" style="width:100%;height:auto;min-height:240px;">`;
+  svg += `<line x1="40" y1="260" x2="1160" y2="260" stroke="#475569" />`;
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i];
     const b = buckets[key];
-    const x = 60 + i * 180;
+    const x = 60 + i * 115;
+    const barW = 90;
     const barH = (Math.abs(b.total) / maxVal) * 200;
     const y = b.total >= 0 ? 260 - barH : 260;
     const color = b.total >= 0 ? '#22c55e' : '#ef4444';
-    svg += `<rect x="${x}" y="${y}" width="120" height="${barH}" fill="${color}" rx="2" />`;
-    svg += `<text x="${x + 60}" y="280" fill="#94a3b8" font-size="11" text-anchor="middle">${key}</text>`;
-    svg += `<text x="${x + 60}" y="${y - 6}" fill="#e2e8f0" font-size="12" text-anchor="middle">${b.total.toFixed(1)}</text>`;
+    svg += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" fill="${color}" rx="2" />`;
+    svg += `<text x="${x + barW/2}" y="280" fill="#94a3b8" font-size="11" text-anchor="middle">${key}</text>`;
+    svg += `<text x="${x + barW/2}" y="${y - 6}" fill="#e2e8f0" font-size="12" text-anchor="middle">${b.total.toFixed(1)}</text>`;
   }
-  svg += `<text x="520" y="295" fill="#94a3b8" font-size="11" text-anchor="middle">Volume Bucket</text>`;
+  svg += `<text x="600" y="295" fill="#94a3b8" font-size="11" text-anchor="middle">Volume</text>`;
   svg += `<text x="14" y="150" fill="#94a3b8" font-size="11" text-anchor="middle" transform="rotate(-90 14 150)">Total P&L ($)</text>`;
   svg += `</svg>`;
 

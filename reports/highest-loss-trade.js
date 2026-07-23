@@ -1,6 +1,13 @@
 export default async function highestLossTrade(events) {
   const closed = events.filter(e => e.closePrice != null);
-  const highestLoss = closed.reduce((max, current) => Number(max.grossProfit) < Number(current.grossProfit) ? current : max, { grossProfit: -Infinity });
+  const losing = closed.filter(e => Number(e.grossProfit) < 0);
+  if (!losing.length) {
+    return { title: 'Highest Loss Trade', description: 'No losing trades available.', html: '<p style="color:#94a3b8">No data.</p>', category: 'Risk & Loss Analysis' };
+  }
+  const highestLoss = losing.reduce((max, current) => Number(current.grossProfit) < Number(max.grossProfit) ? current : max, { grossProfit: Infinity });
+  if (!highestLoss.positionId) {
+    return { title: 'Highest Loss Trade', description: 'No losing trades available.', html: '<p style="color:#94a3b8">No data.</p>', category: 'Risk & Loss Analysis' };
+  }
   const html = `
     <h2>Highest Loss Trade</h2>
     <p><span class="trade-link" data-position-id="${highestLoss.positionId}">Click to inspect position #${highestLoss.positionId}</span></p>
