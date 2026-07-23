@@ -1,25 +1,15 @@
-{
-  "services": {
-    "54-botanalytics-web": {
-      "build": {
-        "context": ".",
-        "dockerfile": "Dockerfile"
-      },
-      "ports": [
-        "8054:8054"
-      ],
-      "environment": [
-        "PORT=8054",
-        "APP_VERSION=1.0.0"
-      ],
-      "volumes": [
-        {
-          "type": "bind",
-          "source": "./events.json",
-          "target": "/app/events.json"
-        }
-      ],
-      "restart": "unless-stopped"
-    }
-  }
-}
+services:
+  54-botanalytics-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8054:8054"
+    environment:
+      - PORT=8054
+      - APP_VERSION=1.0.0
+    volumes:
+      - type: bind
+        source: ./events.json
+        target: /app/events.json
+    restart: unless-stopped
