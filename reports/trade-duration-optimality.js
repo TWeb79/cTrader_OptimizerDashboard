@@ -1,13 +1,19 @@
 export default async function tradeDurationOptimality(events) {
-  const closed = [];
-  const pos = {};
+  const positionEvents = {};
   for (const e of events) {
-    if (e.closePrice != null) {
-      pos[e.positionId] = e;
-    }
+    if (!positionEvents[e.positionId]) positionEvents[e.positionId] = [];
+    positionEvents[e.positionId].push(e);
   }
-  const sorted = Object.values(pos).sort((a, b) => Number(a.time) - Number(b.time));
-  for (const t of sorted) closed.push(t);
+
+  const closed = [];
+  for (const pid of Object.keys(positionEvents)) {
+    const evts = positionEvents[pid].sort((a, b) => Number(a.time) - Number(b.time));
+    const create = evts[0];
+    const close = evts[evts.length - 1];
+    if (!close || close.closePrice == null) continue;
+    const dur = Math.max(1, Math.round((Number(close.time) - Number(create.time)) / 60000));
+    closed.push({ ...close, profit: Number(close.grossProfit) || 0, duration: dur });
+  }
 
   if (!closed.length) {
     return { title: 'Trade Duration Optimality', description: 'No closed trades available.', html: '<p style="color:#94a3b8">No data.</p>' };
@@ -28,8 +34,8 @@ export default async function tradeDurationOptimality(events) {
   }
 
   for (const t of closed) {
-    const dur = Math.max(1, Math.round((Number(t.time) - Number(t.time)) / 60000));
-    const p = Number(t.grossProfit) || 0;
+    const dur = t.duration;
+    const p = t.profit;
     for (const b of buckets) {
       if (dur >= b.min && dur < b.max) {
         bucketData[b.label].trades.push(t);

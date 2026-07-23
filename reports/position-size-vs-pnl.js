@@ -16,23 +16,29 @@ export default async function positionSizeVsPnl(events) {
     const label = hi === Infinity ? lo + '+' : lo + '-' + hi;
     buckets[label] = { total: 0, count: 0, wins: 0, losses: 0 };
   }
+  const pos = {};
   for (const e of events) {
     if (e.closePrice != null) {
-      const v = Number(e.volume) || 0;
-      const p = Number(e.grossProfit) || 0;
-      let key = null;
-      for (const [lo, hi] of bucketDefs) {
-        if (v >= lo && (hi === Infinity || v < hi)) {
-          key = hi === Infinity ? lo + '+' : lo + '-' + hi;
-          break;
-        }
+      pos[e.positionId] = e;
+    }
+  }
+  const closed = Object.values(pos);
+
+  for (const e of closed) {
+    const v = Number(e.volume) || 0;
+    const p = Number(e.grossProfit) || 0;
+    let key = null;
+    for (const [lo, hi] of bucketDefs) {
+      if (v >= lo && (hi === Infinity || v < hi)) {
+        key = hi === Infinity ? lo + '+' : lo + '-' + hi;
+        break;
       }
-      if (key && buckets[key]) {
-        buckets[key].total += p;
-        buckets[key].count += 1;
-        if (p > 0) buckets[key].wins += 1;
-        if (p < 0) buckets[key].losses += 1;
-      }
+    }
+    if (key && buckets[key]) {
+      buckets[key].total += p;
+      buckets[key].count += 1;
+      if (p > 0) buckets[key].wins += 1;
+      if (p < 0) buckets[key].losses += 1;
     }
   }
 

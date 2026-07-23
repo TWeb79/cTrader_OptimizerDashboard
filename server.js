@@ -132,36 +132,28 @@ app.post('/api/upload', upload.array('files'), async (req, res) => {
     for (const file of req.files) {
       const content = file.buffer.toString('utf8');
       const newEvents = parseEvents(content);
+      events = newEvents;
+      reportCache = await loadReports(events);
       const reportResults = {};
-      for (const reportFile of reportFiles) {
-        let id = reportFile.replace(/\.js$/, '');
+      for (const file of reportFiles) {
+        let id = file.replace(/\.js$/, '');
         const targetId = deprecatedAliases[id] || id;
-        try {
-          const mod = await import(`file://${path.join(reportsDir, reportFile)}`);
-          const reportFn = mod.default;
-          if (typeof reportFn !== 'function') {
-            console.warn(`Report ${id} does not export a default function, skipping.`);
-            continue;
-          }
-          const result = await reportFn(newEvents);
-          reportResults[id] = {
-            title: result.title || id,
-            description: result.description || '',
-            html: result.html || '',
-            deprecated: !!deprecatedAliases[id],
-            aliasTarget: deprecatedAliases[id] || undefined,
-          };
-          if (!deprecatedAliases[id]) {
-            reportResults[targetId] = reportResults[id];
-          }
-        } catch (err) {
-          console.error(`Failed to generate report ${id} for file ${file.originalname}:`, err.message);
-          reportResults[id] = { title: id, description: 'Error generating report.', html: `<p style=\"color:#ef4444\">Error</p>` };
+        const cached = reportCache[id];
+        if (!cached) continue;
+        reportResults[id] = {
+          title: cached.title || id,
+          description: cached.description || '',
+          html: cached.html || '',
+          deprecated: !!deprecatedAliases[id],
+          aliasTarget: deprecatedAliases[id] || undefined,
+        };
+        if (!deprecatedAliases[id]) {
+          reportResults[targetId] = reportResults[id];
         }
       }
       filesData.push({
         fileName: file.originalname,
-        eventsCount: newEvents.length,
+        eventsCount: events.length,
         reports: reportResults,
       });
     }

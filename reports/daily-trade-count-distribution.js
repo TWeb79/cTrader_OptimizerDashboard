@@ -1,10 +1,16 @@
 export default async function dailyTradeCountDistribution(events) {
-  const trades = {};
+  const pos = {};
   for (const e of events) {
     if (e.closePrice != null) {
-      const date = new Date(Number(e.time)).toISOString().slice(0, 10);
-      trades[date] = (trades[date] || 0) + 1;
+      pos[e.positionId] = e;
     }
+  }
+  const closed = Object.values(pos);
+
+  const trades = {};
+  for (const e of closed) {
+    const date = new Date(Number(e.time)).toISOString().slice(0, 10);
+    trades[date] = (trades[date] || 0) + 1;
   }
   const dates = Object.keys(trades).sort();
   const values = dates.map(d => trades[d]);

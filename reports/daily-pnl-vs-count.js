@@ -1,12 +1,18 @@
 export default async function dailyPnlVsCount(events) {
-  const pnls = {};
-  const counts = {};
+  const pos = {};
   for (const e of events) {
     if (e.closePrice != null) {
-      const date = new Date(Number(e.time)).toISOString().slice(0, 10);
-      pnls[date] = (pnls[date] || 0) + (Number(e.grossProfit) || 0);
-      counts[date] = (counts[date] || 0) + 1;
+      pos[e.positionId] = e;
     }
+  }
+  const closed = Object.values(pos);
+
+  const pnls = {};
+  const counts = {};
+  for (const e of closed) {
+    const date = new Date(Number(e.time)).toISOString().slice(0, 10);
+    pnls[date] = (pnls[date] || 0) + (Number(e.grossProfit) || 0);
+    counts[date] = (counts[date] || 0) + 1;
   }
   const dates = Object.keys(pnls).sort();
   if (!dates.length) {

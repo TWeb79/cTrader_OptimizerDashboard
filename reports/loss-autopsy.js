@@ -23,12 +23,7 @@ export default async function lossAutopsy(events) {
   const maxLoss = Math.max(...absLoss);
   const medianLoss = absLoss.sort((a, b) => a - b)[Math.floor(absLoss.length / 2)];
 
-  const manualCloses = events.filter(t => t.event === 'Position closed' && Number(t.grossProfit) < 0);
-  const manualLossMap = {};
-  for (const t of manualCloses) {
-    manualLossMap[t.positionId] = t;
-  }
-  const manualLosses = Object.values(manualLossMap);
+  const manualLosses = losses.filter(t => t.event === 'Position closed');
   const slLosses = losses.filter(t => t.event === 'Stop Loss Hit');
   const slLossTotal = slLosses.reduce((a, t) => a + Number(t.grossProfit), 0);
   const manualLossTotal = manualLosses.reduce((a, t) => a + Number(t.grossProfit), 0);
