@@ -206,8 +206,10 @@ function openTradeDetail(positionId) {
     })
     .then((data) => {
       const events = data.events || [];
+      const closeEvent = events.find((ev) => ev.closePrice != null) || events[events.length - 1] || null;
       const timeline = events
         .map((ev) => {
+          const isClose = ev === closeEvent;
           const fields = Object.entries(ev)
             .filter(([k]) => !['serial', 'orderId'].includes(k))
             .map(([k, v]) => {
@@ -217,17 +219,29 @@ function openTradeDetail(positionId) {
             .join('');
           const date = new Date(Number(ev.time));
           const timeStr = date.toISOString().replace('T', ' ').slice(0, 19);
-          return `<div class="event-card">
+          return `<div class="event-card${isClose ? ' close-event' : ''}">
             <div class="event-card-header">
-              <div class="event-type">${escapeHtml(ev.event)}</div>
+              <div class="event-type">${escapeHtml(ev.event)}${isClose ? ' (Close)' : ''}</div>
               <div class="event-time">${timeStr}</div>
             </div>
             <div class="event-grid">${fields}</div>
           </div>`;
         })
         .join('');
+      const closeSummary = closeEvent ? `
+        <div class="close-summary">
+          <h3 style="margin-top:0;color:#22c55e;">Close Event</h3>
+          <div class="event-grid">
+            ${Object.entries(closeEvent)
+              .filter(([k]) => !['serial', 'orderId'].includes(k))
+              .map(([k, v]) => `<div class="event-field"><div class="event-field-label">${escapeHtml(k)}</div><div class="event-field-value">${v === null || v === undefined ? '<span style="color:#64748b">null</span>' : escapeHtml(String(v))}</div></div>`)
+              .join('')}
+          </div>
+        </div>
+      ` : '';
       tradeDetailContent.innerHTML = `
         <h2 style="margin-top:0">Position #${escapeHtml(String(data.positionId))}</h2>
+        ${closeSummary}
         <p style="color:var(--muted);font-size:13px;margin-bottom:12px;">${events.length} event(s) in lifecycle</p>
         <div class="event-timeline">${timeline}</div>
       `;

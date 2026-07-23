@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 8054;
-const APP_VERSION = process.env.APP_VERSION || '1.3.0';
+const APP_VERSION = process.env.APP_VERSION || '1.4.0';
 const upload = multer({ storage: multer.memoryStorage() });
 
 app.use(express.json());
