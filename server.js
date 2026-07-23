@@ -25,6 +25,11 @@ const reportFiles = fs
 
 const reports = {};
 let reportCache = {};
+const deprecatedAliases = {
+  'daily-pnl': 'daily-overview',
+  'daily-pnl-vs-count': 'daily-overview',
+  'daily-trade-count-distribution': 'daily-overview',
+};
 
 function parseEvents(input) {
   let data;
@@ -83,17 +88,20 @@ app.get('/api/reports', (req, res) => {
     description: data.description,
     category: data.category,
     version: data.version,
+    deprecated: !!deprecatedAliases[id],
   }));
   res.json({ version: APP_VERSION, reports: list });
 });
 
 app.get('/api/reports/:id', (req, res) => {
   const { id } = req.params;
-  const data = reportCache[id];
+  const targetId = deprecatedAliases[id] || id;
+  const data = reportCache[targetId];
   if (!data) {
     return res.status(404).json({ error: 'Report not found' });
   }
-  res.json({ ...data, version: APP_VERSION });
+  const isDeprecated = !!deprecatedAliases[id];
+  res.json({ ...data, version: APP_VERSION, deprecated: isDeprecated, aliasTarget: isDeprecated ? targetId : undefined });
 });
 
 app.get('/api/trades/:positionId', (req, res) => {
@@ -126,7 +134,8 @@ app.post('/api/upload', upload.array('files'), async (req, res) => {
       const newEvents = parseEvents(content);
       const reportResults = {};
       for (const reportFile of reportFiles) {
-        const id = reportFile.replace(/\.js$/, '');
+        let id = reportFile.replace(/\.js$/, '');
+        const targetId = deprecatedAliases[id] || id;
         try {
           const mod = await import(`file://${path.join(reportsDir, reportFile)}`);
           const reportFn = mod.default;
@@ -139,7 +148,12 @@ app.post('/api/upload', upload.array('files'), async (req, res) => {
             title: result.title || id,
             description: result.description || '',
             html: result.html || '',
+            deprecated: !!deprecatedAliases[id],
+            aliasTarget: deprecatedAliases[id] || undefined,
           };
+          if (!deprecatedAliases[id]) {
+            reportResults[targetId] = reportResults[id];
+          }
         } catch (err) {
           console.error(`Failed to generate report ${id} for file ${file.originalname}:`, err.message);
           reportResults[id] = { title: id, description: 'Error generating report.', html: `<p style=\"color:#ef4444\">Error</p>` };

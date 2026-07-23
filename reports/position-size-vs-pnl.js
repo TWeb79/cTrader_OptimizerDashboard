@@ -67,7 +67,27 @@ export default async function positionSizeVsPnl(events) {
   }
   table += `</tbody></table>`;
 
-  const html = `<div class="report-header"><h2>Position Size vs P&L</h2><p>Aggregated P&L by volume buckets (using actual 'volume' field).</p></div><div class="report-body">${svg}<p style="color:#94a3b8;font-size:13px;margin-top:8px;margin-bottom:8px;">Does larger position size correlate with higher profit or higher risk?</p>${table}</div>`;
+  const maxWr = Math.max(...keys.map(k => buckets[k].count ? (buckets[k].wins / buckets[k].count) * 100 : 0), 1);
+  let wrSvg = `<svg viewBox="0 0 1200 300" style="width:100%;height:auto;min-height:240px;">`;
+  wrSvg += `<line x1="40" y1="260" x2="1160" y2="260" stroke="#475569" />`;
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    const b = buckets[key];
+    const wr = b.count ? (b.wins / b.count) * 100 : 0;
+    const x = 60 + i * 115;
+    const barW = 90;
+    const barH = (wr / maxWr) * 200;
+    const y = 260 - barH;
+    const color = wr >= 50 ? '#22c55e' : wr >= 40 ? '#fbbf24' : '#ef4444';
+    wrSvg += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" fill="${color}" rx="2" />`;
+    wrSvg += `<text x="${x + barW/2}" y="280" fill="#94a3b8" font-size="11" text-anchor="middle">${key}</text>`;
+    wrSvg += `<text x="${x + barW/2}" y="${y - 6}" fill="#e2e8f0" font-size="12" text-anchor="middle">${wr.toFixed(0)}%</text>`;
+  }
+  wrSvg += `<text x="600" y="295" fill="#94a3b8" font-size="11" text-anchor="middle">Volume</text>`;
+  wrSvg += `<text x="14" y="150" fill="#94a3b8" font-size="11" text-anchor="middle" transform="rotate(-90 14 150)">Win Rate (%)</text>`;
+  wrSvg += `</svg>`;
+
+  const html = `<div class="report-header"><h2>Position Size vs P&L</h2><p>Aggregated P&L by volume buckets (using actual 'volume' field).</p></div><div class="report-body">${svg}<p style="color:#94a3b8;font-size:13px;margin-top:8px;margin-bottom:8px;">Does larger position size correlate with higher profit or higher risk?</p>${wrSvg}<p style="color:#94a3b8;font-size:13px;margin-top:8px;margin-bottom:8px;">Win rate by volume bucket.</p>${table}</div>`;
 
   return { title: 'Position Size vs P&L', description: 'Aggregated profit/loss by volume bucket.', html, category: 'Trade Quality & Sizing' };
 }
