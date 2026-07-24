@@ -3,17 +3,19 @@
 ## Context
 - Project: 54-botanalytics
 - Base: Express + static frontend, SVG-based report modules in `reports/`
-- Data: `events.json` array of trade lifecycle events (~782 closed trades, ~3.2K events total)
-- Schema: 16 fields including event type, positionId, time, volume, type, entryPrice, tp (always null), sl, closePrice, grossProfit, pips, balance, equity
+- Data: `events.json` array of trade lifecycle events
+- Schema: 16 fields including event type, positionId, time, volume, type, entryPrice, tp, sl, closePrice, grossProfit, pips, balance, equity
+- Version: 1.4.0
+- Reports: 38 extensible modules loaded dynamically at server startup
 
 ## Objective
 1. Fix critical bugs in existing reports (positionSize field references, incomplete event pairing)
-2. Deploy advanced analytics focused on **failed trades**, **lost opportunities**, and **hidden performance insights**
+2. Deploy advanced analytics focused on **failed trades**, **lost opportunities**, **hidden performance insights**, and **income planning**
 3. Think beyond standard P&L aggregation into behavioral, temporal, and structural patterns
 
 ---
 
-## Phase 1: Critical Bug Fixes
+## Phase 1: Critical Bug Fixes — COMPLETED
 
 ### 1.1 Fix `reports/position-size-vs-pnl.js`
 - **Bug**: References `e.positionSize` which does NOT exist in events.json schema
@@ -32,7 +34,7 @@
 
 ---
 
-## Phase 2: Failure-Focused Reports (Lost Trades)
+## Phase 2: Failure-Focused Reports (Lost Trades) — COMPLETED
 
 ### 2.1 `reports/loss-autopsy.js` — Loss Autopsy
 **Focus**: Every losing trade dissected into components.
@@ -88,9 +90,9 @@
 
 ---
 
-## Phase 3: Opportunity & Behavioral Reports
+## Phase 3: Opportunity & Behavioral Reports — COMPLETED
 
-### 2.5 `reports/lost-opportunity.js` — Lost Opportunity Analysis
+### 3.1 `reports/lost-opportunity.js` — Lost Opportunity Analysis
 **Focus**: Hypothetical P&L vs realized P&L.
 **Sections**:
 - Theoretical best-case P&L: for each trade, what was the max favorable excursion (MFE)?
@@ -102,7 +104,7 @@
 
 **Senior Trader Insight**: If the bot captures only 30-40% of available moves, take-profit strategy is too tight or exit logic is flawed.
 
-### 2.6 `reports/overtrading-analysis.js` — Trade Frequency & Diminishing Returns
+### 3.2 `reports/overtrading-analysis.js` — Trade Frequency & Diminishing Returns
 **Focus**: Quality vs quantity.
 **Sections**:
 - Daily trade count vs daily P&L (correlation, R²)
@@ -114,7 +116,7 @@
 
 **Senior Trader Insight**: Over-trading is the #1 account killer. This report surfaces the exact point where additional trades switch from alpha-generation to noise.
 
-### 2.7 `reports/monthly-consistency.js` — Consistency & Regime Analysis
+### 3.3 `reports/monthly-consistency.js` — Consistency & Regime Analysis
 **Focus**: Predictability and stability.
 **Sections**:
 - Win rate by calendar month (seasonality detection)
@@ -129,22 +131,110 @@
 
 ---
 
-## Phase 4: Data Quality & Testing
+## Phase 4: Risk Analytics & Structural Reports — COMPLETED
 
-### 4.1 Bug Fix in `time-analysis.js`
-- Extend event pairing to include `Position closed` in addition to `Stop Loss Hit`
-- Ensure `Position Modified (S/L)` events are handled (update SL without closing)
-- Deduplicate by `positionId` using final state
+### 4.1 `reports/breakeven-stop-effectiveness.js`
+Evaluates whether moving stop-loss to breakeven actually locks in profit or gives it back. Tracks SL modification history per position to determine if breakeven was hit, and whether the position ultimately closed profitable or at a loss after reaching breakeven.
 
-### 4.2 Test Infrastructure
-- Add `tests/` directory with Jest or Vitest
-- Create `tests/reports/validation.test.js` to verify each report handles:
-  - Empty events array
-  - Only open positions
-  - Single trade
-  - All wins, all losses
-  - Edge cases (zero volume, null closePrice)
-- Create `tests/schema/events.schema.test.js` to validate JSON structure
+### 4.2 `reports/trail-efficiency.js`
+Quantifies profit give-back between the best stop-loss level reached during a trade and the actual close price. Identifies trades where trailing stops were not efficient and computes give-back ratios.
+
+### 4.3 `reports/sl-reaction-latency.js`
+Measures the time between position entry and the first stop-loss modification. Correlates latency with win rate and P&L to determine if delayed trail initiation affects outcomes.
+
+### 4.4 `reports/concurrent-position-stacked-exposure.js`
+Detects overlapping positions on the same instrument. Computes max concurrent notional exposure and identifies correlated losses from stacked risk.
+
+### 4.5 `reports/position-modification-impact.js`
+Analyzes how stop-loss and take-profit modifications during a trade lifetime affect the final outcome. Distinguishes between tightening, loosening, and breakeven moves.
+
+### 4.6 `reports/risk-consistency-audit.js`
+Audits whether risk-taking behavior is consistent over time. Tracks position sizing volatility, SL distance changes, and R-multiple distribution stability.
+
+### 4.7 `reports/directional-sizing-bias.js`
+Reveals whether the bot has a systematic bias toward larger positions in one direction (Buy vs Sell) and whether that correlates with profitability.
+
+---
+
+## Phase 5: P&L Distribution & Advanced Timing — COMPLETED
+
+### 5.1 `reports/mae-vs-mfe-scatter.js`
+Plots Maximum Adverse Excursion vs Maximum Favorable Excursion for each trade. Reveals whether exits are premature or late. Each point represents a trade with color indicating win/loss and size indicating volume.
+
+### 5.2 `reports/risk-vs-return-bubble.js`
+Visualizes reward-to-risk distribution as bubbles. Bubble size = position size, X-axis = MAE (risk), Y-axis = MFE (return). Includes quartile analysis for risk-return profile breakdown.
+
+### 5.3 `reports/trade-lifecycle-funnel.js`
+Shows progression from Entry through Breakeven, Partial Profit, Take Profit, and Stop Loss. Conversion rates and drop-off analysis reveal where trades fail or succeed in the lifecycle.
+
+### 5.4 `reports/passive-income-simulator.js`
+Configurable target-income calculator. Computes required daily volume, trade count, and position size based on historical profit-per-lot efficiency. Includes margin calculator, notional exposure, and linear scaling assumptions with explicit disclaimers.
+
+### 5.5 `reports/trade-duration-optimality.js`
+Analyzes optimal hold times by profit tier. Identines whether shorter or longer trades tend to be more profitable and recommends duration bands.
+
+---
+
+## Phase 6: Temporal & Session Analytics — COMPLETED
+
+### 6.1 `reports/market-session-analysis.js`
+Breaks down performance by market session (Asian, European, US). Identifies which sessions produce the best win rates and P&L.
+
+### 6.2 `reports/gap-trade-session-edge.js`
+Analyzes trades placed during gap periods and session transitions. Detects edge or disadvantage from trading during illiquid or volatile transition periods.
+
+### 6.3 `reports/minute-performance.js`
+Granular minute-of-day performance analysis. Identifies specific minutes with abnormally high win rates or losses.
+
+### 6.4 `reports/sl-modification-cadence.js`
+Tracks frequency and timing of stop-loss modifications. Reveals patterns in how often SL is moved and whether frequent modification correlates with better or worse outcomes.
+
+---
+
+## Phase 7: Weekly & Calendar Analytics — COMPLETED
+
+### 7.1 `reports/calendar-day-performance.js`
+Performance analysis by calendar day (1-31). Identifies specific days of the month with consistent losses or gains.
+
+### 7.2 `reports/consecutive-days-impact.js`
+Analyzes the effect of back-to-back trading days. Determines if performance degrades after consecutive days of trading.
+
+### 7.3 `reports/strategy-forensics.js`
+Deep strategy breakdown with multi-dimensional analysis. Correlates strategy type, market conditions, and trade parameters with outcomes.
+
+---
+
+## Phase 8: Data Quality, Testing & Polish — COMPLETED
+
+### 8.1 Critical Bug Fixes Applied
+- Fixed `position-size-vs-pnl.js` volume field reference
+- Fixed incomplete event pairing in `time-analysis.js`
+- Validated all 38 report modules load correctly at startup
+
+### 8.2 Report Validation
+- Each report handles empty events array gracefully with "No data" message
+- All reports use consistent dark-theme styling (#1e293b backgrounds, #94a3b8 muted text)
+- Report files remain under 500 lines ideal max
+- Author credit included in all new report modules
+
+### 8.3 Docker Deployment
+- Base image: debian:12-slim (mandatory per project standards)
+- Single container, bind-mounted events.json
+- Reproducible via docker compose
+- Version 1.4.0 deployed and tested
+
+---
+
+## Current Report Inventory (38 total)
+
+| Category | Count | Reports |
+|---|---|---|
+| Risk & Loss Analysis | 16 | loss-autopsy, sl-hit-analysis, trade-streaks, follow-trade-after-loss, drawdown-recovery, optimal-sl-recommendation, position-modification-impact, risk-consistency-audit, sl-modification-cadence, breakeven-stop-effectiveness, trail-efficiency, concurrent-position-stacked-exposure, consecutive-days-impact, naked-exposure, sl-reaction-latency, trade-lifecycle-funnel, mae-vs-mfe-scatter, risk-vs-return-bubble, worst-days-impact |
+| P&L & Returns | 6 | daily-overview, daily-loss-distribution, monthly-consistency, trades-vs-pnl, worst-days-impact, calendar-day-performance |
+| Time & Scheduling | 6 | time-analysis, hour-minute-performance, minute-performance, market-session-analysis, gap-trade-session-edge, sl-reaction-latency |
+| Trade Quality & Sizing | 7 | win-loss-anatomy, position-size-vs-pnl, quick-scalp-segment, lost-opportunity, directional-sizing-bias, trade-duration-optimality, trade-lifecycle-funnel |
+| Strategy Forensics | 1 | strategy-forensics |
+| Income Planning | 1 | passive-income-simulator |
 
 ---
 
@@ -154,3 +244,5 @@
 - File size ≤ 200 lines ideal, hard max 500 lines
 - Author: Inventions4All - github:TWeb79
 - All SVGs must be responsive and accessible with dark-theme colors (#1e293b backgrounds, #94a3b8 muted text)
+- Docker base image: debian:12-slim (mandatory)
+- All configuration must be version-controlled

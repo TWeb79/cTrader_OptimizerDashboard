@@ -15,14 +15,14 @@
 
 ## What It Does
 
-BotAnalytics turns raw trade event logs into actionable analytics. Drop in an `events.json` export, and the dashboard renders 34 independent reports covering risk, timing, sizing, and strategy forensics — no database, no ETL, no config files.
+BotAnalytics turns raw trade event logs into actionable analytics. Drop in an `events.json` export, and the dashboard renders 38 independent reports covering risk, timing, sizing, strategy forensics, and income planning — no database, no ETL, no config files.
 
 ### Key Capabilities
 
 | Capability | Detail |
 |---|---|
 | **Zero-config ingestion** | Upload `events.json` via drag-and-drop or API |
-| **34 built-in reports** | Risk, P&L, time, quality, sizing, and strategy modules |
+| **38 built-in reports** | Risk, P&L, time, quality, sizing, strategy, and income planning modules |
 | **Optimal SL recommendation** | Statistical MAE analysis with daily/hourly heatmaps and long/short breakdowns |
 | **Trade lifecycle inspection** | Click any position ID to view full event timeline with close-event highlighting |
 | **Docker-ready** | Single container, bind-mounted dataset, reproducible deploy |
@@ -65,12 +65,16 @@ open http://localhost:8054
 54-botanalytics/
  ├── server.js                 # Express server, report loader, REST API
  ├── events.json               # Trade event dataset (bind-mounted in Docker)
- ├── reports/                  # Extensible report modules
+ ├── reports/                  # Extensible report modules (38 total)
  │   ├── optimal-sl-recommendation.js
  │   ├── drawdown-recovery.js
  │   ├── loss-autopsy.js
  │   ├── win-loss-anatomy.js
- │   └── ... (34 total)
+ │   ├── passive-income-simulator.js
+ │   ├── risk-vs-return-bubble.js
+ │   ├── mae-vs-mfe-scatter.js
+ │   ├── trade-lifecycle-funnel.js
+ │   └── ... (38 total)
  ├── public/
  │   ├── index.html            # Static shell
  │   ├── app.js                # Sidebar, routing, trade detail modal
@@ -79,7 +83,7 @@ open http://localhost:8054
  ├── compose.yaml
  ├── package.json
  └── README.md
-```
+ ```
 
 ## Reports at a Glance
 
@@ -89,15 +93,44 @@ open http://localhost:8054
 | **Drawdown Recovery** | P&L & Returns | Drawdown depth, recovery duration, equity curve |
 | **Loss Autopsy** | Risk & Loss Analysis | Worst trade spotlight, SL vs manual close breakdown, day/hour heatmaps |
 | **Win-Loss Anatomy** | Trade Quality & Sizing | P&L distribution, duration comparison, day expansion, directional win rates |
+| **MAE vs MFE Scatter** | Risk & Loss Analysis | Maximum Adverse vs Favorable Excursion scatter to evaluate exit timing |
+| **Risk vs Return Bubble** | P&L & Returns | Reward-to-risk bubble visualization with quartile analysis, bubble size = position size |
+| **Trade Lifecycle Funnel** | Risk & Loss Analysis | Funnel analysis from entry through breakeven, profit, TP hit, and SL hit |
+| **Passive Income Simulator** | Income Planning | Configurable target-income calculator with required volume, margin, and scaled risk |
+| **Breakeven-Stop Effectiveness** | Risk & Loss Analysis | How often breakeven protection locks in profit vs gives it back |
+| **Trail Efficiency** | Risk & Loss Analysis | Profit give-back between best SL level reached and actual close |
+| **SL Hit Analysis** | Risk & Loss Analysis | True SL losses vs profitable trailing stops, SL tightness index |
+| **SL Reaction Latency** | Time & Scheduling | Time between entry and first trailing stop vs outcome correlation |
+| **Follow Trade After Loss** | Risk & Loss Analysis | Revenge trading probability, consecutive loss streaks |
 | **Quick-Scalp Segment** | Trade Quality & Sizing | Sub-5-minute trade metrics vs non-scalp, scalp win rate, hour distribution |
 | **Position Size vs P&L** | Trade Quality & Sizing | Volume bucket performance and win-rate correlation |
+| **Position Modification Impact** | Risk & Loss Analysis | How SL/TP modifications affect trade outcomes |
+| **SL Modification Cadence** | Risk & Loss Analysis | Frequency and timing of stop-loss changes |
 | **Time Analysis** | Time & Scheduling | Best/worst trading windows, no-trade zones, start/exit time heatmaps |
-| **Follow Trade After Loss** | Risk & Loss Analysis | Revenge trading probability, consecutive loss streaks |
-| **SL Hit Analysis** | Risk & Loss Analysis | True SL losses vs profitable trailing stops |
 | **Strategy Forensics** | Strategy Forensics | Deep strategy breakdown |
+| **Trades vs P&L** | P&L & Returns | Trade count distribution vs P&L |
+| **Trade Streaks** | Risk & Loss Analysis | Consecutive win/loss patterns, streak impact on equity |
+| **Trade Duration Optimality** | Trade Quality & Sizing | Optimal hold time analysis by profit tier |
+| **Weekly Consistency** | P&L & Returns | Day-of-week performance consistency |
+| **Calendar Day Performance** | Time & Scheduling | Calendar day (1-31) performance to identify no-trade zones |
+| **Consecutive Days Impact** | Risk & Loss Analysis | Back-to-back trading day effects on performance |
+| **Directional Sizing Bias** | Trade Quality & Sizing | Buy vs Sell position size distribution and outcome correlation |
+| **Naked Exposure** | Risk & Loss Analysis | Unprotected position exposure analysis |
+| **Risk Consistency Audit** | Risk & Loss Analysis | Risk-taking consistency over time |
+| **Overtrading Analysis** | Risk & Loss Analysis | Trade frequency vs diminishing returns, rest-day effect |
+| **Monthly Consistency** | P&L & Returns | Month-over-month performance stability, seasonality |
+| **Daily Loss Distribution** | P&L & Returns | Daily loss frequency and magnitude distribution |
+| **Worst Days Impact** | P&L & Returns | Impact of worst trading days on overall performance |
+| **Daily Overview** | P&L & Returns | Executive daily dashboard: KPI cards, P&L timeline, trade count, correlation, calendar heatmap |
+| **Hour Minute Performance** | Time & Scheduling | Hour-of-day and minute-of-day performance heatmaps |
+| **Minute Performance** | Time & Scheduling | Granular minute-level performance analysis |
+| **Market Session Analysis** | Time & Scheduling | Performance across market sessions |
+| **Gap Trade Session Edge** | Time & Scheduling | Gap and session transition trade performance |
+| **Lost Opportunity** | Trade Quality & Sizing | MFE vs actual capture ratio, "could-have-been" analysis |
+| **Concurrent Position Stacked Exposure** | Risk & Loss Analysis | Overlapping position risk and correlated loss detection |
 
 <details>
-<summary>View all 34 reports</summary>
+<summary>View all 38 reports</summary>
 
 | Report ID | Category |
 |---|---|
@@ -114,22 +147,26 @@ open http://localhost:8054
 | `hour-minute-performance` | Time & Scheduling |
 | `loss-autopsy` | Risk & Loss Analysis |
 | `lost-opportunity` | Trade Quality & Sizing |
+| `mae-vs-mfe-scatter` | Risk & Loss Analysis |
 | `market-session-analysis` | Time & Scheduling |
 | `minute-performance` | Time & Scheduling |
 | `monthly-consistency` | P&L & Returns |
 | `naked-exposure` | Risk & Loss Analysis |
 | `optimal-sl-recommendation` | Risk & Loss Analysis |
 | `overtrading-analysis` | Risk & Loss Analysis |
+| `passive-income-simulator` | Income Planning |
 | `position-modification-impact` | Risk & Loss Analysis |
 | `position-size-vs-pnl` | Trade Quality & Sizing |
 | `quick-scalp-segment` | Trade Quality & Sizing |
 | `risk-consistency-audit` | Risk & Loss Analysis |
+| `risk-vs-return-bubble` | P&L & Returns |
 | `sl-hit-analysis` | Risk & Loss Analysis |
 | `sl-modification-cadence` | Risk & Loss Analysis |
 | `sl-reaction-latency` | Time & Scheduling |
-| `strategy-forensics` | Risk & Loss Analysis |
+| `strategy-forensics` | Strategy Forensics |
 | `time-analysis` | Time & Scheduling |
 | `trade-duration-optimality` | Trade Quality & Sizing |
+| `trade-lifecycle-funnel` | Risk & Loss Analysis |
 | `trade-streaks` | Risk & Loss Analysis |
 | `trades-vs-pnl` | P&L & Returns |
 | `trail-efficiency` | Risk & Loss Analysis |
@@ -280,10 +317,9 @@ No registration required. Restart the server and the report appears in the sideb
 2. Create a feature branch: `git checkout -b feat/my-report`
 3. Add your report under `reports/`
 4. Run locally: `npm install && npm start`
-5. Validate with: `npm run test` *(if tests exist)*
-6. Commit: `git commit -m "feat(reports): add my-new-report"`
-7. Push: `git push origin feat/my-report`
-8. Open a Pull Request
+5. Commit: `git commit -m "feat(reports): add my-new-report"`
+6. Push: `git push origin feat/my-report`
+7. Open a Pull Request
 
 ## License
 
