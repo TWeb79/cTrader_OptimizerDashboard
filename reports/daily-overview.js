@@ -10,11 +10,21 @@ export default async function dailyOverview(events) {
 
   const dayMap = {};
   const dayCount = {};
+  const dayWins = {};
+  const dayProfit = {};
+  const dayLoss = {};
   for (const t of closed) {
     const d = new Date(Number(t.time));
     const key = d.toISOString().slice(0, 10);
-    dayMap[key] = (dayMap[key] || 0) + (Number(t.grossProfit) || 0);
+    const profit = Number(t.grossProfit) || 0;
+    dayMap[key] = (dayMap[key] || 0) + profit;
     dayCount[key] = (dayCount[key] || 0) + 1;
+    if (profit > 0) {
+      dayWins[key] = (dayWins[key] || 0) + 1;
+      dayProfit[key] = (dayProfit[key] || 0) + profit;
+    } else if (profit < 0) {
+      dayLoss[key] = (dayLoss[key] || 0) + profit;
+    }
   }
   const days = Object.keys(dayMap).sort();
   if (!days.length) {
@@ -23,7 +33,6 @@ export default async function dailyOverview(events) {
 
   const vals = days.map(d => dayMap[d]);
   const counts = days.map(d => dayCount[d]);
-  const noTradeDays = [];
 
   const maxAbs = Math.max(1, ...vals.map(v => Math.abs(v)));
   const w = 1000, h = 400, pad = 50;
@@ -80,34 +89,103 @@ export default async function dailyOverview(events) {
   const avgPnl = vals.reduce((a, b) => a + b, 0) / vals.length;
   const totalTrades = counts.reduce((a, b) => a + b, 0);
 
+  const totalProfit = closed.filter(t => Number(t.grossProfit) > 0).reduce((a, t) => a + Number(t.grossProfit), 0);
+  const totalLoss = Math.abs(closed.filter(t => Number(t.grossProfit) < 0).reduce((a, t) => a + Number(t.grossProfit), 0));
+  const winRate = totalTrades > 0 ? (closed.filter(t => Number(t.grossProfit) > 0).length / totalTrades) * 100 : 0;
+  const profitFactor = totalLoss > 0 ? totalProfit / totalLoss : 0;
+  const avgRR = totalProfit / (totalLoss || 1) / winRate * (100 - winRate) / 100 || 0;
+  const netPnl = totalProfit - totalLoss;
+
   const html = [];
-  html.push(`<div class="report-header"><h2>Daily Overview</h2><p>Unified daily dashboard: P&L timeline, trade count, and correlation.</p></div>`);
+  html.push(`<div class="report-header"><h2>Daily Overview</h2><p>Executive dashboard with KPI cards, daily P&L timeline, and calendar heatmap.</p></div>`);
 
   const cardStyle = 'display:inline-block;background:#1e293b;border:1px solid #334155;border-radius:10px;padding:12px 16px;min-width:140px;margin:6px;text-align:center;';
   const labelStyle = 'font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;';
   const valueStyle = 'font-size:20px;font-weight:700;margin-top:4px;';
 
   const kpis = [
-    ['Total Days', String(days.length)],
-    ['Profitable Days', String(profitableDays)],
-    ['Losing Days', String(losingDays)],
-    ['Breakeven Days', String(breakevenDays)],
+    ['Net P/L', `$${netPnl >= 0 ? '+' : ''}${netPnl.toFixed(1)}`],
+    ['Win Rate', winRate.toFixed(1) + '%'],
+    ['Profit Factor', profitFactor.toFixed(2)],
+    ['Avg R:R', Number(avgRR).toFixed(2) + ':1'],
     ['Total Trades', String(totalTrades)],
-    ['Avg Daily P&L', avgPnl.toFixed(1)],
-    ['Correlation', corr.toFixed(3)],
+    ['Days Analyzed', String(days.length)],
   ];
 
-  html.push(`<div style="display:flex;flex-wrap:wrap;margin-bottom:16px;">${kpis.map(k => `<div style="${cardStyle}"><div style="${labelStyle}">${k[0]}</div><div style="${valueStyle}">${k[1]}</div></div>`).join('')}</div>`);
+  html.push(`<div style="display:flex;flex-wrap:wrap;margin-bottom:16px;">${kpis.map(k => `<div style="${cardStyle}"><div style="${labelStyle}">${k[0]}</div><div style="${valueStyle};color:${k[0] === 'Net P/L' ? (netPnl >= 0 ? '#22c55e' : '#ef4444') : '#e2e8f0'}">${k[1]}</div></div>`).join('')}</div>`);
 
   html.push(`<div class="report-body"><h3>Daily P&L Timeline</h3><p style="color:#94a3b8;font-size:13px;margin-bottom:8px;">Green = profitable day, Red = losing day.</p>${pnlSvg}</div>`);
   html.push(`<div class="report-body"><h3>Daily Trade Count</h3><p style="color:#94a3b8;font-size:13px;margin-bottom:8px;">Number of closed trades per day.</p>${countSvg}</div>`);
   html.push(`<div class="report-body"><h3>Trades per Day vs Daily P&L</h3><p style="color:#94a3b8;font-size:13px;margin-bottom:8px;">Relationship between number of trades and daily profit/loss.</p>${scatter}${scatterLabel}</div>`);
+  html.push(`<div class="report-body"><h3>Calendar Heatmap</h3><p style="color:#94a3b8;font-size:13px;margin-bottom:8px;">Color intensity shows daily P&L. Redder = larger loss, Greener = larger profit.</p>${calendarHeatmap(dayMap, dayCount)}</div>`);
 
-  if (noTradeDays.length) {
-    html.push(`<div class="report-body"><h3>No-Trade Days</h3><p style="color:#94a3b8;font-size:13px;">Days with no closed trades: ${noTradeDays.join(', ')}</p></div>`);
+  return { title: 'Daily Overview', description: 'Executive daily dashboard: KPI cards, P&L timeline, trade count, correlation, and calendar heatmap.', html: html.join(''), category: 'P&L & Returns' };
+}
+
+function calendarHeatmap(dayMap, dayCount) {
+  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const grid = {};
+  for (const d of Object.keys(dayMap)) {
+    const date = new Date(d + 'T00:00:00');
+    const dayOfWeek = date.getDay();
+    const weekNum = Math.floor((date - new Date(date.getFullYear(), 0, 1)) / 604800000) + 1;
+    const key = `${date.getFullYear()}-${weekNum}-${dayOfWeek}`;
+    const profit = dayMap[d];
+    const count = dayCount[d];
+    if (!grid[key]) {
+      grid[key] = { profit: 0, count: 0, date: d };
+    }
+    grid[key].profit += profit;
+    grid[key].count += count;
   }
-
-  return { title: 'Daily Overview', description: 'Unified daily dashboard: P&L timeline, trade count, and correlation.', html: html.join(''), category: 'P&L & Returns' };
+  const values = Object.values(grid).map(g => g.profit);
+  const min = Math.min(...values, 0);
+  const max = Math.max(...values, 0);
+  const range = max - min || 1;
+  const heatColor = (v) => {
+    if (v === 0) return '#334155';
+    const t = (v - min) / range;
+    if (v >= 0) {
+      const r = Math.round(34 + (251 - 34) * (t / 2 + 0.5));
+      const g = 197;
+      const b = Math.round(94 + (36 - 94) * (t / 2 + 0.5));
+      return 'rgb(' + r + ',' + g + ',' + b + ')';
+    } else {
+      const r = Math.round(239 - (239 - 34) * t);
+      const g = Math.round(68 + (197 - 68) * t);
+      const b = Math.round(68 + (36 - 68) * t);
+      return 'rgb(' + r + ',' + g + ',' + b + ')';
+    }
+  };
+  const weeks = {};
+  for (const key of Object.keys(grid)) {
+    const parts = key.split('-');
+    const week = parts[1];
+    if (!weeks[week]) weeks[week] = {};
+    weeks[week][parts[2]] = grid[key];
+  }
+  let html = '<table style="border-collapse:collapse;font-size:12px;"><thead><tr><th style="padding:4px;background:#1e293b;color:#94a3b8;"></th>';
+  for (let d = 0; d < 7; d++) {
+    html += `<th style="padding:4px;background:#1e293b;color:#94a3b8;">${dayNames[d]}</th>`;
+  }
+  html += '</tr></thead><tbody>';
+  for (const week of Object.keys(weeks).sort()) {
+    html += `<tr><th style="padding:4px;background:#1e293b;color:#94a3b8;text-align:right;font-size:10px;">Wk${week}</th>`;
+    for (let d = 0; d < 7; d++) {
+      const cell = weeks[week][d];
+      if (cell) {
+        const bg = heatColor(cell.profit);
+        const maxAbs = Math.max(Math.abs(max), Math.abs(min));
+        const intensity = Math.abs(cell.profit) / (maxAbs || 1);
+        html += `<td style="padding:6px;background:${bg};color:#e2e8f0;text-align:center;min-width:40px;" title="${cell.date} | P&L: $${cell.profit.toFixed(1)} | Trades: ${cell.count}">${cell.count}</td>`;
+      } else {
+        html += `<td style="padding:6px;background:#0f172a;color:#475569;text-align:center;min-width:40px;">-</td>`;
+      }
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  return html;
 }
 
 function pearson(x, y) {

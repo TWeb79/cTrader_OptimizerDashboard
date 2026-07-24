@@ -7,14 +7,18 @@
  ├── server.js              # Express server, report loader, API
  ├── events.json            # Trade event dataset
  ├── reports/
- │    └── heatmap-day-hour.js
+ │    ├── mae-vs-mfe-scatter.js      # Trade excursion analysis
+ │    ├── optimal-sl-recommendation.js   # Statistically-derived SL levels
+ │    ├── risk-vs-return-bubble.js     # Reward-to-risk visualization
+ │    ├── trade-lifecycle-funnel.js    # Trade progression funnel
+ │    └── ... (37 total reports)
  ├── public/
  │    ├── index.html
  │    ├── app.js
  │    └── style.css
  ├── Dockerfile
  └── compose.yaml
-```
+ ```
 
 ## Module Responsibilities
 

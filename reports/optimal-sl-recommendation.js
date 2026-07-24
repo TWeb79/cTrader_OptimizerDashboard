@@ -6,6 +6,8 @@ export default async function optimalSlRecommendation(events) {
   }
 
   const trades = [];
+  let slBasedCount = 0;
+  let equityFallbackCount = 0;
   for (const pid of Object.keys(positionEvents)) {
     const evts = positionEvents[pid].sort((a, b) => Number(a.time) - Number(b.time));
     const create = evts[0];
@@ -13,13 +15,23 @@ export default async function optimalSlRecommendation(events) {
     if (!create || !close || close.closePrice == null) continue;
 
     const type = close.type;
-    const entryEquity = Number(create.equity);
-    const minEquity = Math.min(...evts.map(ev => Number(ev.equity)).filter(v => !isNaN(v)));
-    const mae = entryEquity > 0 && !isNaN(minEquity) ? Math.max(0, entryEquity - minEquity) : 0;
+    const entry = Number(create.entryPrice);
+    const initialSL = getInitialSl(evts);
     const finalPnl = Number(close.grossProfit) || 0;
     const date = new Date(Number(close.time));
     const day = date.toISOString().slice(0, 10);
     const hour = date.getHours();
+
+    let mae;
+    if (initialSL != null && !isNaN(initialSL)) {
+      mae = Math.abs(entry - initialSL);
+      slBasedCount++;
+    } else {
+      const entryEquity = Number(create.equity);
+      const minEquity = Math.min(...evts.map(ev => Number(ev.equity)).filter(v => !isNaN(v)));
+      mae = entryEquity > 0 && !isNaN(minEquity) ? Math.max(0, entryEquity - minEquity) : 0;
+      equityFallbackCount++;
+    }
 
     trades.push({
       positionId: pid,
@@ -29,6 +41,7 @@ export default async function optimalSlRecommendation(events) {
       day,
       hour,
       win: finalPnl > 0,
+      hasSl: initialSL != null,
     });
   }
 
@@ -46,8 +59,10 @@ export default async function optimalSlRecommendation(events) {
     short: computeStats(shorts.map(t => t.mae).filter(v => v > 0)),
   };
 
+  const thresholdAnalysis = computeMaeThresholdAnalysis(trades);
+
   const html = [];
-  html.push(`<div class="report-header"><h2>Optimal SL Recommendation</h2><p>Statistical analysis of maximum adverse excursion (MAE) to determine optimal stop-loss levels across all trades, by direction, day, and hour.</p></div>`);
+  html.push(`<div class="report-header"><h2>Optimal SL Recommendation</h2><p>Statistical analysis of maximum adverse excursion (MAE) based on stop-loss distance to entry, with intra-trade threshold analysis.</p></div>`);
 
   const cardStyle = 'display:inline-block;background:#1e293b;border:1px solid #334155;border-radius:10px;padding:12px 16px;min-width:160px;margin:6px;text-align:center;';
   const labelStyle = 'font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;';
@@ -60,9 +75,15 @@ export default async function optimalSlRecommendation(events) {
     ['Median MAE', stats.all.median.toFixed(1)],
     ['Max MAE', stats.all.max.toFixed(1)],
     ['Std Dev', stats.all.std.toFixed(1)],
+    ['Trades w/ SL', slBasedCount],
+    ['Equity Fallback', equityFallbackCount],
   ];
 
   html.push(`<div style="display:flex;flex-wrap:wrap;margin-bottom:16px;">${kpis.map(k => `<div style="${cardStyle}"><div style="${labelStyle}">${k[0]}</div><div style="${valueStyle}">${k[1]}</div></div>`).join('')}</div>`);
+
+  html.push(`<div class="report-body"><h3>MAE Threshold Analysis</h3><p style="color:#94a3b8;font-size:13px;margin-bottom:8px;">Win rate degradation when MAE exceeds thresholds. Early exit warning levels shown in red.</p>`);
+  html.push(thresholdTable(thresholdAnalysis));
+  html.push(`</div>`);
 
   html.push(`<div class="report-body"><h3>Recommended SL Levels</h3><p style="color:#94a3b8;font-size:13px;margin-bottom:8px;">Based on Maximum Adverse Excursion (MAE) distribution across all closed trades.</p>`);
   html.push(`<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;"><thead><tr style="background:#1e293b;color:#94a3b8;"><th style="padding:8px;text-align:left;">Metric</th><th style="padding:8px;text-align:right">All Trades</th><th style="padding:8px;text-align:right">Long (Buy)</th><th style="padding:8px;text-align:right">Short (Sell)</th></tr></thead><tbody>`);
@@ -261,4 +282,61 @@ function heatColor(intensity) {
   const g = Math.round(41 + (68 - 41) * t);
   const b = Math.round(54 + (68 - 54) * t);
   return `rgb(${r},${g},${b})`;
+}
+
+function getInitialSl(evts) {
+  if (!evts || !evts.length) return null;
+  for (const e of evts) {
+    if (e.sl != null && e.event === 'Position Modified (S/L)') {
+      return Number(e.sl);
+    }
+    if (e.sl != null && typeof e.sl === 'number') {
+      return Number(e.sl);
+    }
+  }
+  const withSl = evts.find(e => e.sl != null);
+  return withSl ? Number(withSl.sl) : null;
+}
+
+function computeMaeThresholdAnalysis(trades) {
+  const thresholds = [0, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200];
+  const results = [];
+
+  for (const thresh of thresholds) {
+    const below = trades.filter(t => t.mae <= thresh);
+    const above = trades.filter(t => t.mae > thresh);
+
+    const belowWinRate = below.length ? below.filter(t => t.win).length / below.length : 0;
+    const aboveWinRate = above.length ? above.filter(t => t.win).length / above.length : 0;
+    const allWinRate = trades.length ? trades.filter(t => t.win).length / trades.length : 0;
+
+    const recoveryRate = above.length ? trades.filter(t => t.mae > thresh && t.win).length / above.length : 0;
+
+    results.push({
+      threshold: thresh,
+      belowCount: below.length,
+      aboveCount: above.length,
+      belowWinRate: belowWinRate,
+      aboveWinRate: aboveWinRate,
+      allWinRate: allWinRate,
+      recoveryRate: recoveryRate,
+      winRateDrop: belowWinRate > 0 ? (belowWinRate - aboveWinRate) / belowWinRate : 0,
+    });
+  }
+
+  return results;
+}
+
+function thresholdTable(analysis) {
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#1e293b;color:#94a3b8;"><th style="padding:8px;text-align:left;">MAE Threshold</th><th style="padding:8px;text-align:right">Above</th><th style="padding:8px;text-align:right">Win Rate</th><th style="padding:8px;text-align:right">Drop vs Below</th><th style="padding:8px;text-align:right">Recovery</th></tr></thead><tbody>';
+
+  for (const r of analysis) {
+    const isWarning = r.aboveWinRate < r.belowWinRate * 0.5 && r.aboveCount > 10;
+    const winColor = r.aboveWinRate < 0.5 ? '#ef4444' : r.aboveWinRate < 0.7 ? '#f59e0b' : '#22c55e';
+    const dropColor = r.winRateDrop > 0.5 ? '#ef4444' : r.winRateDrop > 0.25 ? '#f59e0b' : '#94a3b8';
+
+    html += `<tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px;color:#e2e8f0;">≤ ${r.threshold}</td><td style="padding:8px;text-align:right;color:#94a3b8;">${r.aboveCount} trades</td><td style="padding:8px;text-align:right;color:${winColor};">${(r.aboveWinRate * 100).toFixed(0)}%</td><td style="padding:8px;text-align:right;color:${dropColor};">${(r.winRateDrop * 100).toFixed(0)}%</td><td style="padding:8px;text-align:right;color:#94a3b8;">${(r.recoveryRate * 100).toFixed(0)}%</td></tr>`;
+  }
+  html += '</tbody></table>';
+  return html;
 }
