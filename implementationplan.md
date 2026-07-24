@@ -5,7 +5,7 @@
 - Base: Express + static frontend, SVG-based report modules in `reports/`
 - Data: `events.json` array of trade lifecycle events
 - Schema: 16 fields including event type, positionId, time, volume, type, entryPrice, tp, sl, closePrice, grossProfit, pips, balance, equity
-- Version: 1.4.0
+- Version: 1.5.0
 - Reports: 38 extensible modules loaded dynamically at server startup
 
 ## Objective

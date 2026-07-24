@@ -14,7 +14,7 @@ RUN npm install --production
 COPY . .
 
 ENV PORT=8054
-ENV APP_VERSION=1.0.0
+ENV APP_VERSION=1.5.0
 
 EXPOSE 8054
 

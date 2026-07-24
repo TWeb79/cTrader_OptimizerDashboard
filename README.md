@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/Trading_Analytics-54-botanalytics-blue?style=for-the-badge" alt="BotAnalytics"/>
   <img src="https://img.shields.io/badge/Node_18%2B-Express-green?style=for-the-badge&logo=nodedotjs" alt="Node"/>
   <img src="https://img.shields.io/badge/Docker-Ready-0db7ed?style=for-the-badge&logo=docker" alt="Docker"/>
-  <img src="https://img.shields.io/badge/Version-1.4.0-brightgreen?style=for-the-badge" alt="Version"/>
+  <img src="https://img.shields.io/badge/Version-1.5.0-brightgreen?style=for-the-badge" alt="Version"/>
 </p>
 
 <p align="center">
@@ -270,7 +270,7 @@ docker compose up --force-recreate -d
 | Variable | Default | Description |
 |---|---|---|
 | `PORT` | `8054` | Server port |
-| `APP_VERSION` | `1.4.0` | Version string |
+| `APP_VERSION` | `1.5.0` | Version string |
 
 ### Volumes
 
