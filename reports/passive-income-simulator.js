@@ -91,13 +91,25 @@ export default async function passiveIncomeSimulator(events) {
 
   // ---- Defaults for the interactive calculator ----------------------------
   const DEFAULT_TARGET = 200;
+  const DEFAULT_PRICE = 7400;
+  const DEFAULT_LEVERAGE = 30;
+  const DEFAULT_CONTRACT_SIZE = 1; // units of the instrument per 1.0 "volume" — see note in Margin section
+
+  // Volume is scaled up ONE time (target ÷ profit-per-lot). "Trades/day" is
+  // then derived from that SAME total volume in one of two mutually
+  // exclusive ways — never both applied together (that would double it):
+  //   Approach A: keep your average size-per-trade the same, place more trades
+  //   Approach B: keep your current number of trades/day, make each one bigger
+  // reqTradesA * avgVolumePerTrade === avgTradesPerDay * sizePerTradeB === reqVolume (always)
   const calc = (target) => {
     const reqVolume = profitPerVolume > 0 ? target / profitPerVolume : 0;
-    const reqTrades = avgVolumePerTrade > 0 ? reqVolume / avgVolumePerTrade : 0;
+    const reqTradesA = avgVolumePerTrade > 0 ? reqVolume / avgVolumePerTrade : 0;
+    const sizePerTradeB = avgTradesPerDay > 0 ? reqVolume / avgTradesPerDay : 0;
     const scale = avgDailyProfit > 0 ? target / avgDailyProfit : 0;
     return {
       reqVolume,
-      reqTrades,
+      reqTradesA,
+      sizePerTradeB,
       scale,
       scaledWorst: worstDay * scale,
       scaledBest: bestDay * scale,
@@ -106,7 +118,13 @@ export default async function passiveIncomeSimulator(events) {
       annual: target * avgTradingDaysPerMonth * 12,
     };
   };
+  const marginOf = (reqVolume, price, leverage, contractSize) => {
+    const notional = reqVolume * contractSize * price;
+    const margin = leverage > 0 ? notional / leverage : notional;
+    return { notional, margin };
+  };
   const d0 = calc(DEFAULT_TARGET);
+  const m0 = marginOf(d0.reqVolume, DEFAULT_PRICE, DEFAULT_LEVERAGE, DEFAULT_CONTRACT_SIZE);
 
   // ---- Styles (matching existing report conventions) ----------------------
   const cardStyle = 'display:inline-block;background:#1e293b;border:1px solid #334155;border-radius:10px;padding:12px 16px;min-width:150px;margin:6px;text-align:center;';
@@ -151,6 +169,7 @@ export default async function passiveIncomeSimulator(events) {
   const calcJs = buildCalcJs({
     profitPerVolume,
     avgVolumePerTrade,
+    avgTradesPerDay,
     avgDailyProfit,
     worstDay,
     bestDay,
@@ -167,13 +186,18 @@ export default async function passiveIncomeSimulator(events) {
 
   html.push(`<div style="display:flex;flex-wrap:wrap;margin-top:12px;">
     <div style="${bigCardStyle}"><div style="${bigLabelStyle}">Required Daily Volume</div><div style="${bigValueStyle}"><span id="pis-reqvol">${d0.reqVolume.toFixed(2)}</span> lots</div></div>
-    <div style="${bigCardStyle}"><div style="${bigLabelStyle}">Required Trades/Day</div><div style="${bigValueStyle}"><span id="pis-reqtrades">${d0.reqTrades.toFixed(1)}</span></div></div>
     <div style="${cardStyle}"><div style="${labelStyle}">Volume Scale Factor</div><div style="${valueStyle}"><span id="pis-scale">${d0.scale.toFixed(2)}</span>×</div></div>
     <div style="${cardStyle}"><div style="${labelStyle}">Projected Monthly Income</div><div style="${valueStyle}">€<span id="pis-monthly">${d0.monthly.toFixed(0)}</span></div></div>
     <div style="${cardStyle}"><div style="${labelStyle}">Projected Annual Income</div><div style="${valueStyle}">€<span id="pis-annual">${d0.annual.toFixed(0)}</span></div></div>
   </div>`);
 
+  html.push(`<p style="color:#94a3b8;font-size:12px;margin-top:8px;">"Required daily volume" is scaled up <strong style="color:#e2e8f0;">once</strong>. The two boxes below show the <em>same</em> total volume split two different ways — pick whichever matches how you'd actually trade. Do not add these together.</p>`);
   html.push(`<div style="display:flex;flex-wrap:wrap;margin-top:6px;">
+    <div style="${bigCardStyle}"><div style="${bigLabelStyle}">Approach A — More Trades, Same Size</div><div style="${bigValueStyle}"><span id="pis-reqtradesA">${d0.reqTradesA.toFixed(1)}</span> trades/day</div><div style="font-size:11px;color:#86efac;margin-top:4px;">at your current avg size, ${avgVolumePerTrade.toFixed(2)} lots/trade</div></div>
+    <div style="${bigCardStyle}"><div style="${bigLabelStyle}">Approach B — Same Trade Count, Bigger Size</div><div style="${bigValueStyle}"><span id="pis-sizeB">${d0.sizePerTradeB.toFixed(2)}</span> lots/trade</div><div style="font-size:11px;color:#86efac;margin-top:4px;">at your current pace, ${avgTradesPerDay.toFixed(1)} trades/day</div></div>
+  </div>`);
+
+  html.push(`<div style="display:flex;flex-wrap:wrap;margin-top:10px;">
     <div style="${riskCardStyle}"><div style="${riskLabelStyle}">Scaled Worst Day</div><div style="${riskValueStyle}">€<span id="pis-sworst">${d0.scaledWorst.toFixed(0)}</span></div></div>
     <div style="${riskCardStyle}"><div style="${riskLabelStyle}">Scaled Daily Volatility (σ)</div><div style="${riskValueStyle}">€<span id="pis-sstd">${d0.scaledStd.toFixed(0)}</span></div></div>
     <div style="${cardStyle}"><div style="${labelStyle}">Scaled Best Day</div><div style="${valueStyle}">€<span id="pis-sbest">${d0.scaledBest.toFixed(0)}</span></div></div>
@@ -181,15 +205,29 @@ export default async function passiveIncomeSimulator(events) {
 
   html.push(`<p style="color:#94a3b8;font-size:12px;margin-top:10px;">Historically, <strong style="color:#e2e8f0;">${belowAvgRate.toFixed(0)}%</strong> of trading days closed below the average — meaning even at the required volume, more than half of days are likely to fall short of the target while others exceed it. Averages smooth out day-to-day swings; the scaled worst day above shows what a genuinely bad day would cost you at this volume.</p></div>`);
 
+  // ---- Required capital / margin -------------------------------------------
+  html.push(`<div class="report-body"><h3>Required Trading Capital (Margin)</h3><p style="color:#94a3b8;font-size:13px;margin-bottom:10px;">Estimated capital needed to actually hold the required daily volume open, based on instrument price and leverage. Formula: <code style="color:#e2e8f0;">margin = (required volume × contract size × price) ÷ leverage</code>. Defaults below use your figures — US500 at €7,400, 30:1 leverage. <strong style="color:#fbbf24;">Contract size defaults to 1 unit per 1.0 volume</strong> (matches this dataset's grossProfit ≈ price-move × volume); adjust it if your broker defines a "lot" differently.</p>`);
+  html.push(`<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+    <div><label for="pis-price" style="font-size:12px;color:#94a3b8;display:block;margin-bottom:6px;">Avg. instrument price (€)</label><input id="pis-price" type="number" min="0" step="10" value="${DEFAULT_PRICE}" oninput="${calcJs}" style="width:140px;padding:8px 10px;font-size:14px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;" /></div>
+    <div><label for="pis-leverage" style="font-size:12px;color:#94a3b8;display:block;margin-bottom:6px;">Leverage (1:X)</label><input id="pis-leverage" type="number" min="1" step="1" value="${DEFAULT_LEVERAGE}" oninput="${calcJs}" style="width:110px;padding:8px 10px;font-size:14px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;" /></div>
+    <div><label for="pis-contractsize" style="font-size:12px;color:#94a3b8;display:block;margin-bottom:6px;">Contract size (units/1.0 vol)</label><input id="pis-contractsize" type="number" min="0.01" step="0.01" value="${DEFAULT_CONTRACT_SIZE}" oninput="${calcJs}" style="width:150px;padding:8px 10px;font-size:14px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;" /></div>
+  </div>`);
+  html.push(`<div style="display:flex;flex-wrap:wrap;">
+    <div style="${cardStyle}"><div style="${labelStyle}">Notional Exposure (Required Volume)</div><div style="${valueStyle}">€<span id="pis-notional">${m0.notional.toFixed(0)}</span></div></div>
+    <div style="${bigCardStyle}"><div style="${bigLabelStyle}">Required Margin / Budget</div><div style="${bigValueStyle}">€<span id="pis-margin">${m0.margin.toFixed(0)}</span></div></div>
+  </div>`);
+  html.push(`<p style="color:#94a3b8;font-size:12px;margin-top:10px;">This is the margin to <em>hold</em> the required daily volume simultaneously open — not a full risk budget. Brokers issue margin calls well before a position wipes out your full balance, so plan account capital well above this figure (it does not include the loss buffer from the "Scaled Worst Day" above).</p></div>`);
+
   // ---- Reference table for common targets ----------------------------------
   const refTargets = [50, 100, 150, 200, 250, 300, 400, 500, 750, 1000, 1500, 2000];
-  let table = `<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;"><thead><tr style="background:#1e293b;color:#94a3b8;"><th style="padding:8px;text-align:left;">Target/Day</th><th style="padding:8px;text-align:right">Req. Volume</th><th style="padding:8px;text-align:right">Req. Trades/Day</th><th style="padding:8px;text-align:right">Monthly Income</th><th style="padding:8px;text-align:right">Scaled Worst Day</th><th style="padding:8px;text-align:right">Scaled σ</th></tr></thead><tbody>`;
+  let table = `<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;"><thead><tr style="background:#1e293b;color:#94a3b8;"><th style="padding:8px;text-align:left;">Target/Day</th><th style="padding:8px;text-align:right">Req. Volume</th><th style="padding:8px;text-align:right">Trades/Day (Approach A)</th><th style="padding:8px;text-align:right">Lots/Trade (Approach B)</th><th style="padding:8px;text-align:right">Monthly Income</th><th style="padding:8px;text-align:right">Scaled Worst Day</th><th style="padding:8px;text-align:right">Est. Margin*</th></tr></thead><tbody>`;
   for (const target of refTargets) {
     const c = calc(target);
-    table += `<tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px;color:#e2e8f0;">€${target}</td><td style="padding:8px;text-align:right">${c.reqVolume.toFixed(2)}</td><td style="padding:8px;text-align:right">${c.reqTrades.toFixed(1)}</td><td style="padding:8px;text-align:right;color:#22c55e;">€${c.monthly.toFixed(0)}</td><td style="padding:8px;text-align:right;color:#ef4444;">€${c.scaledWorst.toFixed(0)}</td><td style="padding:8px;text-align:right;color:#fbbf24;">€${c.scaledStd.toFixed(0)}</td></tr>`;
+    const m = marginOf(c.reqVolume, DEFAULT_PRICE, DEFAULT_LEVERAGE, DEFAULT_CONTRACT_SIZE);
+    table += `<tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px;color:#e2e8f0;">€${target}</td><td style="padding:8px;text-align:right">${c.reqVolume.toFixed(2)}</td><td style="padding:8px;text-align:right">${c.reqTradesA.toFixed(1)}</td><td style="padding:8px;text-align:right">${c.sizePerTradeB.toFixed(2)}</td><td style="padding:8px;text-align:right;color:#22c55e;">€${c.monthly.toFixed(0)}</td><td style="padding:8px;text-align:right;color:#ef4444;">€${c.scaledWorst.toFixed(0)}</td><td style="padding:8px;text-align:right;color:#38bdf8;">€${m.margin.toFixed(0)}</td></tr>`;
   }
   table += `</tbody></table>`;
-  html.push(`<div class="report-body"><h3>Reference Table</h3><p style="color:#94a3b8;font-size:13px;margin-bottom:8px;">Same calculation as above, pre-computed for common target incomes.</p>${table}</div>`);
+  html.push(`<div class="report-body"><h3>Reference Table</h3><p style="color:#94a3b8;font-size:13px;margin-bottom:8px;">Same calculation as above, pre-computed for common target incomes. *Margin assumes US500 @ €${DEFAULT_PRICE}, ${DEFAULT_LEVERAGE}:1 leverage, ${DEFAULT_CONTRACT_SIZE} unit/lot — adjust these in the calculator above to recompute live.</p>${table}</div>`);
 
   // ---- Chart: required volume vs target income -----------------------------
   const chartMax = 2000;
@@ -260,29 +298,42 @@ function escapeHtml(str) {
 // (inline HTML content is inserted via innerHTML on the client, which does
 // not execute <script> tags — but inline event-handler attributes like
 // oninput/onclick are parsed and do execute normally).
-function buildCalcJs({ profitPerVolume, avgVolumePerTrade, avgDailyProfit, worstDay, bestDay, stdDev, avgTradingDaysPerMonth }) {
+function buildCalcJs({ profitPerVolume, avgVolumePerTrade, avgTradesPerDay, avgDailyProfit, worstDay, bestDay, stdDev, avgTradingDaysPerMonth }) {
+  // Reads ALL four inputs (target income, price, leverage, contract size)
+  // every time any one of them fires — so it's safe to attach this exact
+  // same handler to every input regardless of which one the user edits.
   const js = `
-    const t = parseFloat(this.value) || 0;
+    const t = parseFloat(document.getElementById('pis-target').value) || 0;
     const ppv = ${profitPerVolume};
     const avpt = ${avgVolumePerTrade};
+    const atpd = ${avgTradesPerDay};
     const adp = ${avgDailyProfit};
     const worst = ${worstDay};
     const best = ${bestDay};
     const std = ${stdDev};
     const tpm = ${avgTradingDaysPerMonth};
     const reqVol = ppv > 0 ? t / ppv : 0;
-    const reqTrades = avpt > 0 ? reqVol / avpt : 0;
+    const reqTradesA = avpt > 0 ? reqVol / avpt : 0;
+    const sizePerTradeB = atpd > 0 ? reqVol / atpd : 0;
     const scale = adp > 0 ? t / adp : 0;
     const monthly = t * tpm;
     const annual = monthly * 12;
     document.getElementById('pis-reqvol').textContent = reqVol.toFixed(2);
-    document.getElementById('pis-reqtrades').textContent = reqTrades.toFixed(1);
+    document.getElementById('pis-reqtradesA').textContent = reqTradesA.toFixed(1);
+    document.getElementById('pis-sizeB').textContent = sizePerTradeB.toFixed(2);
     document.getElementById('pis-scale').textContent = scale.toFixed(2);
     document.getElementById('pis-monthly').textContent = monthly.toFixed(0);
     document.getElementById('pis-annual').textContent = annual.toFixed(0);
     document.getElementById('pis-sworst').textContent = (worst * scale).toFixed(0);
     document.getElementById('pis-sbest').textContent = (best * scale).toFixed(0);
     document.getElementById('pis-sstd').textContent = (std * scale).toFixed(0);
+    const price = parseFloat(document.getElementById('pis-price').value) || 0;
+    const leverage = parseFloat(document.getElementById('pis-leverage').value) || 1;
+    const contractSize = parseFloat(document.getElementById('pis-contractsize').value) || 1;
+    const notional = reqVol * contractSize * price;
+    const margin = leverage > 0 ? notional / leverage : notional;
+    document.getElementById('pis-notional').textContent = notional.toFixed(0);
+    document.getElementById('pis-margin').textContent = margin.toFixed(0);
   `.replace(/\s+/g, ' ').trim();
   return escapeHtml(js);
 }
