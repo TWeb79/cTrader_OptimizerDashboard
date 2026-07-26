@@ -242,7 +242,7 @@ Deep strategy breakdown with multi-dimensional analysis. Correlates strategy typ
 
 ---
 
-## Current Report Inventory (39 total)
+## Current Report Inventory (41 total)
 
 | Category | Count | Reports |
 |---|---|---|
@@ -252,6 +252,8 @@ Deep strategy breakdown with multi-dimensional analysis. Correlates strategy typ
 | Trade Quality & Sizing | 8 | win-loss-anatomy, position-size-vs-pnl, quick-scalp-segment, lost-opportunity, directional-sizing-bias, trade-duration-optimality, trade-lifecycle-funnel, profit-efficiency-ranking |
 | Strategy Forensics | 1 | strategy-forensics |
 | Income Planning | 1 | passive-income-simulator |
+| Market Regime | 1 | market-regime-analysis |
+| Bot Performance | 1 | bot-score-analysis |
 
 ---
 

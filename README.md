@@ -15,14 +15,14 @@
 
 ## What It Does
 
-BotAnalytics turns raw trade event logs into actionable analytics. Drop in an `events.json` export, and the dashboard renders 39 independent reports covering risk, timing, sizing, strategy forensics, and income planning — no database, no ETL, no config files.
+BotAnalytics turns raw trade event logs into actionable analytics. Drop in an `events.json` export, and the dashboard renders 41 independent reports covering risk, timing, sizing, strategy forensics, income planning, market regime analysis, and bot performance scoring — no database, no ETL, no config files.
 
 ### Key Capabilities
 
 | Capability | Detail |
 |---|---|
 | **Zero-config ingestion** | Upload `events.json` via drag-and-drop or API |
-| **39 built-in reports** | Risk, P&L, time, quality, sizing, strategy, and income planning modules |
+| **39 built-in reports** | Risk, P&L, time, quality, sizing, strategy, income planning, and market regime modules |
 | **Optimal SL recommendation** | Statistical MAE analysis with daily/hourly heatmaps and long/short breakdowns |
 | **Trade lifecycle inspection** | Click any position ID to view full event timeline with close-event highlighting |
 | **Docker-ready** | Single container, bind-mounted dataset, reproducible deploy |
@@ -126,12 +126,15 @@ open http://localhost:8054
 | **Hour Minute Performance** | Time & Scheduling | Hour-of-day and minute-of-day performance heatmaps |
 | **Minute Performance** | Time & Scheduling | Granular minute-level performance analysis |
 | **Market Session Analysis** | Time & Scheduling | Performance across market sessions |
+| **Market Regime Analysis** | Market Regime | S&P 500 regime classification with SL, breakeven, and position sizing recommendations |
+| **Bot Score Analysis** | Bot Performance | Composite bot performance score based on Net Profit, Profit Factor, Recovery Factor, and Max Drawdown |
 | **Gap Trade Session Edge** | Time & Scheduling | Gap and session transition trade performance |
+| **Market Regime Analysis** | Market Regime | S&P 500 regime classification with SL, breakeven, and position sizing recommendations |
 | **Lost Opportunity** | Trade Quality & Sizing | MFE vs actual capture ratio, "could-have-been" analysis |
 | **Concurrent Position Stacked Exposure** | Risk & Loss Analysis | Overlapping position risk and correlated loss detection |
 
 <details>
-<summary>View all 39 reports</summary>
+<summary>View all 41 reports</summary>
 
 | Report ID | Category |
 |---|---|
@@ -148,6 +151,8 @@ open http://localhost:8054
 | `hour-minute-performance` | Time & Scheduling |
 | `loss-autopsy` | Risk & Loss Analysis |
 | `lost-opportunity` | Trade Quality & Sizing |
+| `market-regime-analysis` | Market Regime |
+| `bot-score-analysis` | Bot Performance |
 | `mae-vs-mfe-scatter` | Risk & Loss Analysis |
 | `market-session-analysis` | Time & Scheduling |
 | `minute-performance` | Time & Scheduling |
