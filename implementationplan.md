@@ -6,7 +6,7 @@
 - Data: `events.json` array of trade lifecycle events
 - Schema: 16 fields including event type, positionId, time, volume, type, entryPrice, tp, sl, closePrice, grossProfit, pips, balance, equity
 - Version: 1.5.0
-- Reports: 38 extensible modules loaded dynamically at server startup
+- Reports: 39 extensible modules loaded dynamically at server startup
 
 ## Objective
 1. Fix critical bugs in existing reports (positionSize field references, incomplete event pairing)
@@ -175,6 +175,23 @@ Analyzes optimal hold times by profit tier. Identines whether shorter or longer 
 
 ---
 
+### 5.5 `reports/profit-efficiency-ranking.js` — Profit Efficiency Ranking
+**Focus**: Rank trades by profit per unit volume to identify capital efficiency.
+**Sections**:
+- Closed trades ranked by `profit / volume` metric
+- Summary KPIs: average efficiency, median efficiency, best trade, worst trade, coefficient of variation
+- Top 200 trades table with position IDs for drill-down
+- Efficiency distribution by direction (Buy vs Sell) with avg/best/worst/win rate
+- Z-score outlier detection (statistically significant winners and losers)
+- Pareto efficiency analysis (top X% trades driving Y% of total efficiency)
+- Volume band efficiency (early-identification signal: which position sizes produce best efficiency)
+- Stop-loss distance vs efficiency (early-identification signal: SL proximity to entry)
+- Hour-of-day efficiency (early-identification signal: best and worst trading windows)
+
+**Senior Trader Insight**: Some trades may look unprofitable in absolute terms but highly efficient per unit; others look good but ate massive size. This report surfaces true per-unit capital efficiency. Extended with early-identification signals to help size and time entries before close.
+
+---
+
 ## Phase 6: Temporal & Session Analytics — COMPLETED
 
 ### 6.1 `reports/market-session-analysis.js`
@@ -225,14 +242,14 @@ Deep strategy breakdown with multi-dimensional analysis. Correlates strategy typ
 
 ---
 
-## Current Report Inventory (38 total)
+## Current Report Inventory (39 total)
 
 | Category | Count | Reports |
 |---|---|---|
 | Risk & Loss Analysis | 16 | loss-autopsy, sl-hit-analysis, trade-streaks, follow-trade-after-loss, drawdown-recovery, optimal-sl-recommendation, position-modification-impact, risk-consistency-audit, sl-modification-cadence, breakeven-stop-effectiveness, trail-efficiency, concurrent-position-stacked-exposure, consecutive-days-impact, naked-exposure, sl-reaction-latency, trade-lifecycle-funnel, mae-vs-mfe-scatter, risk-vs-return-bubble, worst-days-impact |
 | P&L & Returns | 6 | daily-overview, daily-loss-distribution, monthly-consistency, trades-vs-pnl, worst-days-impact, calendar-day-performance |
 | Time & Scheduling | 6 | time-analysis, hour-minute-performance, minute-performance, market-session-analysis, gap-trade-session-edge, sl-reaction-latency |
-| Trade Quality & Sizing | 7 | win-loss-anatomy, position-size-vs-pnl, quick-scalp-segment, lost-opportunity, directional-sizing-bias, trade-duration-optimality, trade-lifecycle-funnel |
+| Trade Quality & Sizing | 8 | win-loss-anatomy, position-size-vs-pnl, quick-scalp-segment, lost-opportunity, directional-sizing-bias, trade-duration-optimality, trade-lifecycle-funnel, profit-efficiency-ranking |
 | Strategy Forensics | 1 | strategy-forensics |
 | Income Planning | 1 | passive-income-simulator |
 

@@ -15,14 +15,14 @@
 
 ## What It Does
 
-BotAnalytics turns raw trade event logs into actionable analytics. Drop in an `events.json` export, and the dashboard renders 38 independent reports covering risk, timing, sizing, strategy forensics, and income planning — no database, no ETL, no config files.
+BotAnalytics turns raw trade event logs into actionable analytics. Drop in an `events.json` export, and the dashboard renders 39 independent reports covering risk, timing, sizing, strategy forensics, and income planning — no database, no ETL, no config files.
 
 ### Key Capabilities
 
 | Capability | Detail |
 |---|---|
 | **Zero-config ingestion** | Upload `events.json` via drag-and-drop or API |
-| **38 built-in reports** | Risk, P&L, time, quality, sizing, strategy, and income planning modules |
+| **39 built-in reports** | Risk, P&L, time, quality, sizing, strategy, and income planning modules |
 | **Optimal SL recommendation** | Statistical MAE analysis with daily/hourly heatmaps and long/short breakdowns |
 | **Trade lifecycle inspection** | Click any position ID to view full event timeline with close-event highlighting |
 | **Docker-ready** | Single container, bind-mounted dataset, reproducible deploy |
@@ -104,6 +104,7 @@ open http://localhost:8054
 | **Follow Trade After Loss** | Risk & Loss Analysis | Revenge trading probability, consecutive loss streaks |
 | **Quick-Scalp Segment** | Trade Quality & Sizing | Sub-5-minute trade metrics vs non-scalp, scalp win rate, hour distribution |
 | **Position Size vs P&L** | Trade Quality & Sizing | Volume bucket performance and win-rate correlation |
+| **Profit Efficiency Ranking** | Trade Quality & Sizing | Trades ranked by profit per 1 volume unit to evaluate capital efficiency |
 | **Position Modification Impact** | Risk & Loss Analysis | How SL/TP modifications affect trade outcomes |
 | **SL Modification Cadence** | Risk & Loss Analysis | Frequency and timing of stop-loss changes |
 | **Time Analysis** | Time & Scheduling | Best/worst trading windows, no-trade zones, start/exit time heatmaps |
@@ -130,7 +131,7 @@ open http://localhost:8054
 | **Concurrent Position Stacked Exposure** | Risk & Loss Analysis | Overlapping position risk and correlated loss detection |
 
 <details>
-<summary>View all 38 reports</summary>
+<summary>View all 39 reports</summary>
 
 | Report ID | Category |
 |---|---|
@@ -157,6 +158,7 @@ open http://localhost:8054
 | `passive-income-simulator` | Income Planning |
 | `position-modification-impact` | Risk & Loss Analysis |
 | `position-size-vs-pnl` | Trade Quality & Sizing |
+| `profit-efficiency-ranking` | Trade Quality & Sizing |
 | `quick-scalp-segment` | Trade Quality & Sizing |
 | `risk-consistency-audit` | Risk & Loss Analysis |
 | `risk-vs-return-bubble` | P&L & Returns |
