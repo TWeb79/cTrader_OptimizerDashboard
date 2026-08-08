@@ -104,6 +104,37 @@ app.get('/api/reports/:id', (req, res) => {
   res.json({ ...data, version: APP_VERSION, deprecated: isDeprecated, aliasTarget: isDeprecated ? targetId : undefined });
 });
 
+app.get('/api/reports/:id/markdown', (req, res) => {
+  const { id } = req.params;
+  const targetId = deprecatedAliases[id] || id;
+  const data = reportCache[targetId];
+  if (!data) {
+    return res.status(404).json({ error: 'Report not found' });
+  }
+  const filename = `${targetId}-${new Date().toISOString().slice(0, 10)}.md`;
+  res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  if (data.markdown) {
+    res.send(data.markdown);
+    return;
+  }
+  const text = (data.html || '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<\/tr>/gi, '\n')
+    .replace(/<\/td>/gi, ' | ')
+    .replace(/<\/th>/gi, ' | ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, '\n\n');
+  res.send(text || `# ${data.title || targetId}\n\nNo content available.`);
+});
+
 app.get('/api/trades/:positionId', (req, res) => {
   const { positionId } = req.params;
   const pid = Number(positionId);
@@ -144,6 +175,7 @@ app.post('/api/upload', upload.array('files'), async (req, res) => {
           title: cached.title || id,
           description: cached.description || '',
           html: cached.html || '',
+          markdown: cached.markdown || '',
           deprecated: !!deprecatedAliases[id],
           aliasTarget: deprecatedAliases[id] || undefined,
         };

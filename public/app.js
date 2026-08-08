@@ -116,11 +116,13 @@ async function selectReport(id, btn) {
 }
 
 function renderReport(data) {
+  const downloadBtn = `<button class="download-md-btn" onclick="downloadMarkdown('${escapeHtml(data.id || '')}')" title="Download as Markdown">⬇ MD</button>`;
   reportsContainer.innerHTML = `
     <div class="report-view">
       <div class="report-header">
         <h2>${escapeHtml(data.title)}</h2>
         <p>${escapeHtml(data.description)}</p>
+        ${downloadBtn}
       </div>
       <div class="report-body">${data.html || '<p style="color:var(--muted)">No content.</p>'}</div>
     </div>
@@ -156,9 +158,11 @@ function renderUploadedReport(id) {
     } else {
       const card = document.createElement('div');
       card.className = 'report-item';
+      const downloadBtn = `<button class="download-md-btn" onclick="downloadMarkdown('${escapeHtml(id)}')" title="Download as Markdown">⬇ MD</button>`;
       card.innerHTML = `
         <h4>${escapeHtml(report.title || id)}</h4>
         ${report.description ? `<p class="report-desc">${escapeHtml(report.description)}</p>` : ''}
+        ${downloadBtn}
         <div class="report-body">${report.html || '<p style="color:var(--muted)">No content.</p>'}</div>
       `;
       col.appendChild(card);
@@ -418,6 +422,25 @@ function escapeHtml(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+async function downloadMarkdown(reportId) {
+  try {
+    const res = await fetch(`/api/reports/${encodeURIComponent(reportId)}/markdown`);
+    if (!res.ok) throw new Error('Failed to download markdown');
+    const text = await res.text();
+    const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${reportId}-${new Date().toISOString().slice(0, 10)}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('Download failed: ' + err.message);
+  }
 }
 
 fullscreenOverlay.querySelector('.fullscreen-close').addEventListener('click', closeFullscreen);
